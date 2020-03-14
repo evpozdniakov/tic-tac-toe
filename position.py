@@ -52,28 +52,20 @@ Receives game position and returns true if it is a win
 '''
 def isWinPosition(position):
   if np.multiply([[1, 0, 0], [0, 1, 0], [0, 0, 1]], position).sum() == 3:
-    print('1')
     return True
   elif np.multiply([[0, 0, 1], [0, 1, 0], [1, 0, 0]], position).sum() == 3:
-    print('2')
     return True
   elif np.multiply([[1, 1, 1], [0, 0, 0], [0, 0, 0]], position).sum() == 3:
-    print('3')
     return True
   elif np.multiply([[0, 0, 0], [1, 1, 1], [0, 0, 0]], position).sum() == 3:
-    print('4')
     return True
   elif np.multiply([[0, 0, 0], [0, 0, 0], [1, 1, 1]], position).sum() == 3:
-    print('5')
     return True
   elif np.multiply([[1, 0, 0], [1, 0, 0], [1, 0, 0]], position).sum() == 3:
-    print('6')
     return True
   elif np.multiply([[0, 1, 0], [0, 1, 0], [0, 1, 0]], position).sum() == 3:
-    print('7')
     return True
   elif np.multiply([[0, 0, 1], [0, 0, 1], [0, 0, 1]], position).sum() == 3:
-    print('8')
     return True
   return False
 
@@ -149,8 +141,6 @@ def makeRandomMovement(position):
         emptyCellCoords.append((i, j))
 
   randomIndex = np.floor(np.random.rand() * len(emptyCellCoords)).astype(int)
-  print('======= randomIndex:')
-  print(randomIndex)
   coords = emptyCellCoords[randomIndex]
   i2 = coords[0]
   j2 = coords[1]
