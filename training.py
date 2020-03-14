@@ -18,11 +18,13 @@ Returns a dictionary with
 '''
 def makeTrainingExampleRec(initialPosition):
   initialPositionVector = position.reshapePositionInVector(initialPosition)
-  # inversePosition = position.inversePosition(initialPosition)
-  # inversePositionVector = position.reshapePositionInVector(inversePosition)
+  inverseInitialPosition = position.inversePosition(initialPosition)
+  inverseInitialPositionVector = position.reshapePositionInVector(inverseInitialPosition)
   randomMovement = position.makeRandomMovement(initialPosition)
   randomMovementCoords = randomMovement['coords']
+  [rowIndex, colIndex] = randomMovementCoords
   finalPosition = randomMovement['resultPosition']
+  randomMovementPutX = finalPosition[rowIndex][colIndex] == 1
   X = []
   Y = []
 
@@ -32,14 +34,28 @@ def makeTrainingExampleRec(initialPosition):
     X = opponentMovement['X']
     Y = opponentMovement['Y']
 
-  X.append(initialPositionVector)
 
   if position.isWinPosition(finalPosition):
-    Y.append(movementMatrixInVector(randomMovementCoords, 'win'))
+    if randomMovementPutX:
+      X.append(initialPositionVector)
+      Y.append(movementMatrixInVector(randomMovementCoords, 'win'))
+    else:
+      X.append(inverseInitialPositionVector)
+      Y.append(movementMatrixInVector(randomMovementCoords, 'loss'))
   elif position.isLossPosition(finalPosition):
-    Y.append(movementMatrixInVector(randomMovementCoords, 'loss'))
+    if randomMovementPutX:
+      X.append(initialPositionVector)
+      Y.append(movementMatrixInVector(randomMovementCoords, 'loss'))
+    else:
+      X.append(inverseInitialPositionVector)
+      Y.append(movementMatrixInVector(randomMovementCoords, 'win'))
   else:
-    Y.append(movementMatrixInVector(randomMovementCoords, 'draw'))
+    if randomMovementPutX:
+      X.append(initialPositionVector)
+      Y.append(movementMatrixInVector(randomMovementCoords, 'draw'))
+    else:
+      X.append(inverseInitialPositionVector)
+      Y.append(movementMatrixInVector(randomMovementCoords, 'draw'))
   
   return {
     'X': X,
