@@ -6,7 +6,9 @@ Receives a position
 and prints it out
 '''
 def printPosition(position):
+  assert isinstance(position, np.ndarray)
   assert position.shape == (3, 3)
+
   print(position)
 
 
@@ -30,6 +32,9 @@ def randomPosition():
 Receives game position and returns it inverted
 '''
 def inversePosition(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
   return position * -1
 
 
@@ -37,6 +42,9 @@ def inversePosition(position):
 Returns game position and returns True if it is a real position
 '''
 def isRealPosition(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
   if position.sum() == 0:
     return True
   
@@ -51,6 +59,9 @@ Receives game position and returns true if it is a win
 (there are 3 X in a row)
 '''
 def isWinPosition(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
   if np.multiply([[1, 0, 0], [0, 1, 0], [0, 0, 1]], position).sum() == 3:
     return True
   elif np.multiply([[0, 0, 1], [0, 1, 0], [1, 0, 0]], position).sum() == 3:
@@ -75,6 +86,9 @@ Receives game position and returns true if it is a loss
 (there are 3 O in a row)
 '''
 def isLossPosition(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
   if isWinPosition(position):
     return False
 
@@ -86,6 +100,9 @@ Receives position
 Returns True if it has zeros
 '''
 def positionHasEmptyCells(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
   return np.square(position).sum() < 9
 
 
@@ -94,6 +111,9 @@ Receives game position and returns true
 if there is no empty place for a movement
 '''
 def isDrawPosition(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
   if isWinPosition(position):
     return False
   
@@ -103,7 +123,7 @@ def isDrawPosition(position):
   if positionHasEmptyCells(position):
     return False
 
-  return False
+  return True
 
 
 '''
@@ -111,6 +131,9 @@ Receives game position.
 Returns true if it is a win, or a loss, or a draw.
 '''
 def isFinalPosition(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
   if isWinPosition(position):
     return True
 
@@ -131,7 +154,9 @@ A position is a matrix 3x3 where
   -1 is opponent player O
 '''
 def makeRandomMovement(position):
-  assert not isDrawPosition(position)
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+  assert not isFinalPosition(position)
 
   emptyCellCoords = []
 
@@ -164,4 +189,7 @@ Receives game position, matrix 3 x 3
 Reshapes it in a vector 9 x 1 and returns.
 '''
 def reshapePositionInVector(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
   return position.reshape(9, 1)
