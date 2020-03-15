@@ -18,7 +18,7 @@ def forwardPropagation(W, b, X):
   Z = np.dot(W[0], X) + b[0]
   A = sigmoid(Z)
 
-  return A
+  # TODO: use for loop
 
   # Z = np.array([None])
   # A = np.array([X])
@@ -28,7 +28,7 @@ def forwardPropagation(W, b, X):
   #   Z = np.append(Z, np.dot(W[i], A[i]) + b[i])
   #   A = np.append(A, sigmoid(Z[i + 1]))
 
-  # return A
+  return A
 
 
 '''
@@ -178,6 +178,25 @@ def initializeWeights(n):
 
   return (W, b)
 
+
+
+'''
+Receives weights, bias and initial position
+Returns best movement
+'''
+def predict(W, b, x):
+  assert isinstance(W, np.ndarray)
+  assert isinstance(b, np.ndarray)
+  assert isinstance(x, np.ndarray)
+  assert x.shape == (9, 1)
+
+  a = forwardPropagation(W, b, x)
+  maxIndex = a.argmax()
+
+  y = np.zeros((9, 1))
+  y[maxIndex] = 1
+
+  return y
 
 '''
 Receives matrix of values.
