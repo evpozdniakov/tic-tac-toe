@@ -7,28 +7,23 @@ Calculates and returns the result 9 x m vector
 '''
 def forwardPropagation(W, b, X):
   assert isinstance(W, np.ndarray)
-  assert len(W.shape) == 3
+  # assert len(W.shape) == 3
   assert isinstance(b, np.ndarray)
-  assert len(b.shape) == 3
+  # assert len(b.shape) == 3
   assert W[0].shape[0] == b[0].shape[0]
   assert isinstance(X, np.ndarray)
   assert len(X.shape) == 2
   assert(X.shape[0] == 9)
 
-  Z = np.dot(W[0], X) + b[0]
-  A = sigmoid(Z)
+  Z = [None]
+  A = [X]
+  L = len(W)
 
-  # TODO: use for loop
+  for i in range(L):
+    Z.append(np.dot(W[i], A[i]) + b[i])
+    A.append(sigmoid(Z[i + 1]))
 
-  # Z = np.array([None])
-  # A = np.array([X])
-  # L = len(W)
-
-  # for i in range(L):
-  #   Z = np.append(Z, np.dot(W[i], A[i]) + b[i])
-  #   A = np.append(A, sigmoid(Z[i + 1]))
-
-  return A
+  return A[L]
 
 
 '''
@@ -88,9 +83,9 @@ Reshapes them into a vector
 '''
 def reshapeInTheta(W, b):
   assert isinstance(W, np.ndarray)
-  assert len(W.shape) == 3
+  # assert len(W.shape) == 3
   assert isinstance(b, np.ndarray)
-  assert len(b.shape) == 3
+  # assert len(b.shape) == 3
 
   L = W.shape[0]
   theta = np.array([])
@@ -113,7 +108,7 @@ def reshapeFromTheta(theta, WCopy):
   assert theta.shape[1] == 1
 
   assert isinstance(WCopy, np.ndarray)
-  assert len(WCopy.shape) == 3  
+  # assert len(WCopy.shape) == 3  
 
   W = []
   b = []
@@ -191,6 +186,26 @@ def predict(W, b, x):
   assert x.shape == (9, 1)
 
   a = forwardPropagation(W, b, x)
+  maxIndex = a.argmax()
+
+  if x[maxIndex] == 0:
+    y = np.zeros((9, 1))
+    y[maxIndex] = 1
+
+    return y
+
+  a[maxIndex] = 0
+
+  maxIndex = a.argmax()
+
+  if x[maxIndex] == 0:
+    y = np.zeros((9, 1))
+    y[maxIndex] = 1
+
+    return y
+
+  a[maxIndex] = 0
+
   maxIndex = a.argmax()
 
   y = np.zeros((9, 1))

@@ -19,7 +19,7 @@ Returns random position
 def randomPosition():
   m1 = np.random.rand(3, 3)
   m2 = m1 * 3
-  m3 = np.floor(m2)
+  m3 = np.floor(m2).astype(np.int8)
   m4 = m3 - 1
 
   if isRealPosition(m4):
@@ -171,7 +171,7 @@ def makeRandomMovement(position):
   j2 = coords[1]
 
   # TODO make copyPosition
-  resultPosition = np.multiply(np.ones((3, 3)), position)
+  resultPosition = np.multiply(np.ones((3, 3)), position).astype(np.int8)
 
   resultPosition[i2][j2] = 1 if position.sum() == 0 else -1
 
