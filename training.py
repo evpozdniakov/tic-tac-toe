@@ -8,7 +8,7 @@ Returns a few training examples:
   Y: matrix 9 x m
 '''
 def makeTrainingExamples():
-  zeroPosition = np.zeros((3, 3))
+  zeroPosition = np.zeros((3, 3)).astype(np.int8)
   trainingExampes = makeTrainingExamplesRec(zeroPosition)
 
   return {
@@ -132,3 +132,61 @@ def movementMatrixInVector(coords, result):
     movementMatrix[i][j] = 0.5
 
   return position.reshapePositionInVector(movementMatrix)
+
+
+
+'''
+Receives an array of m training examples.
+Each training example is a dict where
+  X is an array of 9 integers
+  Y is an array of 9 floats
+Reshapes each tr. example in 18 dimensional vector
+transforms result matrix of 18 x m and saves it in file m_training_examples.csv
+'''
+def saveTrainingExamples(trainingExamples, fileName = 'm_training_examples.csv'):
+  X = trainingExamples['X']
+  Y = trainingExamples['Y']
+  XY = np.append(X, Y, axis = 0)
+  np.savetxt(fileName, XY.T, fmt='%0.1f', delimiter=',')
+
+
+
+'''
+Generates and saves m traning examples
+'''
+def generateAndSaveTrainingExamples(m):
+  trainingExamples = makeTrainingExamples()
+
+  X = trainingExamples['X']
+  Y = trainingExamples['Y']
+
+  for _ in range(0, m):
+    trainingExamples = makeTrainingExamples()
+    X = np.append(X, trainingExamples['X'], axis = 1)
+    Y = np.append(Y, trainingExamples['Y'], axis = 1)
+    if len(X[0]) >= m:
+      break
+
+  X = X[:,0:m]
+  Y = Y[:,0:m]
+  
+  saveTrainingExamples({
+    'X': X,
+    'Y': Y,
+  })
+
+
+
+'''
+Reads and returns training examples
+'''
+def readTrainingExamples(fileName = 'm_training_examples.csv'):
+  raw = np.loadtxt(fileName, delimiter=',')
+  XY = raw.T
+  X = XY[0:9, :].astype(np.int8)
+  Y = XY[9:18, :].astype(np.float32)
+
+  return {
+    'X': X,
+    'Y': Y,
+  }
