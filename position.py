@@ -1,4 +1,5 @@
 import numpy as np
+from termcolor import colored
 
 
 '''
@@ -9,7 +10,41 @@ def printPosition(position):
   assert isinstance(position, np.ndarray)
   assert position.shape == (3, 3)
 
-  print(position)
+  xo = [['_', '_', '_'],
+    ['_', '_', '_'],
+    ['_', '_', '_']]
+
+  for i in range(0, 3):
+    for j in range(0, 3):
+      if position[i][j] == 1:
+        xo[i][j] = colored('X', 'green')
+      elif position[i][j] == -1:
+        xo[i][j] = colored('O', 'blue')
+    print(xo[i][0] + ' ' + xo[i][1] + ' ' + xo[i][2])
+
+
+
+'''
+Receives movement vector
+and prints it out
+'''
+def printMovement(movement):
+  assert isinstance(movement, np.ndarray)
+  assert movement.shape == (9, 1)
+
+  xo = [['_', '_', '_'],
+    ['_', '_', '_'],
+    ['_', '_', '_']]
+
+  movement2 = (movement * 10).astype(np.int)
+
+  for i in range(0, 3):
+    for j in range(0, 3):
+      value = movement2[i * 3 + j][0]
+      if value > 0:
+        strValue = str(value)
+        xo[i][j] = colored(strValue, 'red')
+    print(xo[i][0] + ' ' + xo[i][1] + ' ' + xo[i][2])
 
 
 
