@@ -180,11 +180,17 @@ def generateAndSaveTrainingExamples(m):
 '''
 Reads and returns training examples
 '''
-def readTrainingExamples(fileName = 'm_training_examples.csv'):
+def readTrainingExamples(m = 0, fileName = 'm_training_examples.csv'):
   raw = np.loadtxt(fileName, delimiter=',')
   XY = raw.T
   X = XY[0:9, :].astype(np.int8)
   Y = XY[9:18, :].astype(np.float32)
+
+  if m > 0:
+    return {
+      'X': X[:, 0:m],
+      'Y': Y[:, 0:m],
+    }
 
   return {
     'X': X,
