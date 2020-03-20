@@ -17,6 +17,7 @@ def makeTrainingExamples():
   }
 
 
+
 '''
 Receives initial position, makes random movement.
 If the movement does not give final position (win, loss, or draw)
@@ -61,6 +62,7 @@ def makeTrainingExamplesRec(initialPosition):
   }
 
 
+
 '''
 Receives initial position and random movement.
 Also receives the final position (game result).
@@ -82,56 +84,86 @@ def makeSingleTrainingExample(initialPosition, randomMovement, finalPosition):
   randomMovementCoords = randomMovement['coords']
   (rowIndex, colIndex) = randomMovementCoords
   randomMovementPutX = finalPosition[rowIndex][colIndex] == 1
+  inverseFinalPosition = position.inversePosition(finalPosition)
 
   if position.isWinPosition(finalPosition):
     if randomMovementPutX:
       x = initialPositionVector
-      y = movementMatrixInVector(randomMovementCoords, 'win')
+      y = movementMatrixInVector(initialPosition, randomMovementCoords, 'win', finalPosition)
     else:
       x = inverseInitialPositionVector
-      y = movementMatrixInVector(randomMovementCoords, 'loss')
+      y = movementMatrixInVector(inverseInitialPosition, randomMovementCoords, 'loss', inverseFinalPosition)
   elif position.isLossPosition(finalPosition):
     if randomMovementPutX:
       x = initialPositionVector
-      y = movementMatrixInVector(randomMovementCoords, 'loss')
+      y = movementMatrixInVector(initialPosition, randomMovementCoords, 'loss', finalPosition)
     else:
       x = inverseInitialPositionVector
-      y = movementMatrixInVector(randomMovementCoords, 'win')
+      y = movementMatrixInVector(inverseInitialPosition, randomMovementCoords, 'win', inverseFinalPosition)
   else:
     if randomMovementPutX:
       x = initialPositionVector
+      y = movementMatrixInVector(initialPosition, randomMovementCoords, 'draw', finalPosition)
     else:
       x = inverseInitialPositionVector
-    y = movementMatrixInVector(randomMovementCoords, 'draw')
+      y = movementMatrixInVector(inverseInitialPosition, randomMovementCoords, 'draw', inverseFinalPosition)
   
   return (x, y)
 
 
 
 '''
-Receives movement coords: [rowIndex, colIndex]
+Receives initial position, movement coords: [rowIndex, colIndex]
 and game result (win|loss|draw)
-Makes result matrix with all zeros except one value
-which is 0.1, 0.5, or 1 depending on game result.
-Returns this matrix reshaped in a vector 9 x 1.
+Makes result matrix where we put
+  0 for the places taken by X/O
+  0.1 for the movement coords if loss
+  1 for the movement coords if win
+  0.5 for the movement coords if draw
+  0.3 for all the other not taken places
+Returns a vector 9 x 1.
 '''
-def movementMatrixInVector(coords, result):
+def movementMatrixInVector(initialPosition, movementCoords, result, finalPosition):
+  assert isinstance(initialPosition, np.ndarray)
+  assert initialPosition.shape == (3, 3)
+
+  assert isinstance(movementCoords, tuple)
+  assert len(movementCoords) == 2
+
   assert isinstance(result, str)
 
-  assert isinstance(coords, tuple)
-  assert len(coords) == 2
+  assert isinstance(finalPosition, np.ndarray)
+  assert finalPosition.shape == (3, 3)
 
   movementMatrix = np.zeros((3, 3))
-  [i, j] = coords
+  [mi, mj] = movementCoords
 
-  if result == 'win':
-    movementMatrix[i][j] = 1
-  elif result == 'loss':
-    movementMatrix[i][j] = 0.1
-  else:
-    movementMatrix[i][j] = 0.5
+  for i in range(3):
+    for j in range(3):
+      if i == mi and j == mj:
+        if result == 'win':
+          movementMatrix[i][j] = 1
+        elif result == 'loss':
+          movementMatrix[i][j] = 0.1
+        else:
+          movementMatrix[i][j] = 0.5
+      elif initialPosition[i][j] == 0:
+        movementMatrix[i][j] = 0.3
 
-  return position.reshapePositionInVector(movementMatrix)
+  y = position.reshapePositionInVector(movementMatrix)
+
+  # print('initial position')
+  # position.printPosition(initialPosition)
+
+  # print('y')
+  # position.printMovement(y.reshape(9, 1))
+
+  # print('final position')
+  # position.printPosition(finalPosition)
+
+  # raw_input("Press Enter to continue...")
+
+  return y
 
 
 
