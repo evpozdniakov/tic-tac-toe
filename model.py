@@ -23,24 +23,43 @@ def forwardPropagation(W, b, X):
     Z.append(np.dot(W[i], A[i]) + b[i])
     A.append(sigmoid(Z[i + 1]))
 
+  # m = X.shape[1]
+  # ALexp = np.exp(A[L])
+  # ALexpSum = np.sum(ALexp, axis = 0).reshape(1, m)
+  # A[L] = ALexp / ALexpSum
+
   return A[L]
 
 
 '''
-Receives expected (Y) and calculated result (Yhat)
+Receives Y and Yhat
 (both are numpy arrays 9 x m)
-Calculates and returns cost
+Calculates the cost based on the following algorithm:
+- only Yhat with value 1 (the movement) is considered
 '''
 def costFunction(Y, Yhat):
   assert isinstance(Y, np.ndarray)
   assert len(Y.shape) == 2
   assert isinstance(Yhat, np.ndarray)
+  assert Y.shape[0] == 9
   assert Y.shape == Yhat.shape
 
   m = Y.shape[1]
-  cost = Y * np.log(Yhat) + (1 - Y) * np.log(1 - Yhat)
+
+  YhatVmax = np.max(Yhat, axis = 0)
+  Mask = (Yhat == YhatVmax).astype(int)
+
+  YMask = Y * Mask
+  YhatMask = Yhat * Mask
+
+  YhatMaskFlat = np.sum(YhatMask, axis = 0).reshape(1, m)
+  YMaskFlat = np.sum(YMask, axis = 0).reshape(1, m)
+
+  cost = YMaskFlat * np.log(YhatMaskFlat) + (1 - YMaskFlat) * np.log(1 - YhatMaskFlat)
+
   cost = np.sum(cost)
   cost = cost * -1 / m
+
   return cost
 
 
@@ -163,7 +182,7 @@ def initializeWeights(n):
 
   for i in range(1, L):
     layerWeights = np.random.randn(n[i], n[i - 1]) * np.sqrt(2. / n[i - 1])
-    layerBias = np.zeros((n[i], 1))
+    layerBias = np.random.randn(n[i], 1) * np.sqrt(2.)
 
     W.append(layerWeights)
     b.append(layerBias)
@@ -222,3 +241,78 @@ def sigmoid(Z):
   assert len(Z.shape) == 2
 
   return 1 / (1 + np.exp(-Z))
+
+
+
+'''
+Receives layers structure list (e.g. [9, 9])
+weights, bias, and file name. Saves all data in a file. 
+'''
+def saveModel(layers, W, b, fname = 'test.model'):
+  assert isinstance(fname, str)
+  assert isinstance(layers, list)
+  assert isinstance(W, np.ndarray)
+  assert isinstance(b, np.ndarray)
+
+  flatLayers = [len(layers)]
+  flatLayers.extend(layers)
+  flatLayers = np.array(flatLayers)
+  flatLayers = flatLayers.reshape(flatLayers.size, 1)
+
+  flatW = W.reshape(W.size, 1)
+  flatb = b.reshape(b.size, 1)
+
+  result = np.concatenate((flatLayers, flatW, flatb), axis = 0)
+  # print(result)
+
+  np.savetxt(fname, result, delimiter=',')
+
+
+
+'''
+Receives file name.
+Reads file content and returns dictionary
+{
+  'n': <layers>,
+  'W': <weights>,
+  'b': <bias>,
+}
+'''
+def loadModel(fname):
+  raw = np.loadtxt(fname, delimiter=',')
+  raw = raw.reshape(raw.size, 1)
+
+  L = (raw[0][0]).astype(int)
+  n = raw[1:L + 1].astype(int)
+  n = n.reshape(1, L)
+  n = n[0]
+
+  start = L + 1
+  W = []
+  b = []
+
+  for i in range(1, L):
+    size = n[i] * n[i - 1]
+    end = start + size
+    layerWeights = raw[start:end]
+    layerWeights = layerWeights.reshape(n[i], n[i - 1])
+    start = end
+    W.append(layerWeights)
+
+  for i in range(1, L):
+    size = n[i]
+    end = start + size
+    layerBias = raw[start:end]
+    layerBias = layerBias.reshape(n[i], 1)
+    start = end
+
+    b.append(layerBias)
+  
+  W = np.array(W)
+  b = np.array(b)
+
+  return {
+    'n': n,
+    'W': W,
+    'b': b,
+  }
