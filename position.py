@@ -80,13 +80,22 @@ def isRealPosition(position):
   assert isinstance(position, np.ndarray)
   assert position.shape == (3, 3)
 
-  if position.sum() == 0:
-    return True
+  if position.sum() < 0:
+    return False
   
-  if position.sum() == 1:
-    return True
-  
-  return False
+  if position.sum() > 1:
+    return False
+
+  if isWinPosition(position):
+    return False
+
+  if isLossPosition(position):
+    return False
+
+  if isDrawPosition(position):
+    return False
+
+  return True
 
 
 '''
