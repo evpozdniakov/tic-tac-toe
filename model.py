@@ -1,6 +1,7 @@
 import numpy as np
 
 
+
 '''
 Receives NN weights, bias, and initial entries matrix 9 x m
 Calculates and returns the result 9 x m vector
@@ -20,6 +21,11 @@ def forwardPropagation(W, b, X):
   L = len(W)
 
   for i in range(L):
+    # print('W[i].shape')
+    # print(W[i].shape)
+    # print('A[i].shape')
+    # print(A[i].shape)
+    # exit()
     Z.append(np.dot(W[i], A[i]) + b[i])
     A.append(sigmoid(Z[i + 1]))
 
@@ -29,6 +35,7 @@ def forwardPropagation(W, b, X):
   # A[L] = ALexp / ALexpSum
 
   return A[L]
+
 
 
 '''
@@ -61,6 +68,7 @@ def costFunction(Y, Yhat):
   cost = cost * -1 / m
 
   return cost
+
 
 
 '''
@@ -96,6 +104,7 @@ def calcGradients(W, b, X, Y, epsilon = 1e-3):
   return (dW, db)
 
 
+
 '''
 Receives NN weights and bias
 Reshapes them into a vector
@@ -116,6 +125,7 @@ def reshapeInTheta(W, b):
   theta = theta.reshape(theta.size, 1)
 
   return theta
+
 
 
 '''
@@ -150,6 +160,7 @@ def reshapeFromTheta(theta, WCopy):
   return (W, b)
 
 
+
 '''
 Receives weights, their derivatives, and learning rate.
 Returns updated weights
@@ -166,6 +177,7 @@ def updateWeights(W, dW, b, db, alpha):
   for i in range(len(W)):
     W[i] = W[i] - alpha * dW[i]
     b[i] = b[i] - alpha * db[i]
+
 
 
 '''
@@ -231,6 +243,8 @@ def predict(W, b, x):
   y[maxIndex] = 1
 
   return y
+
+
 
 '''
 Receives matrix of values.
