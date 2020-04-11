@@ -54,47 +54,9 @@ def forwardPropagation2(W, b, X):
 '''
 Receives Y and Yhat
 (both are numpy arrays 9 x m)
-Calculates the cost based on the following algorithm:
-- only Yhat with value 1 (the movement) is considered
-'''
-def costFunction(Y, Yhat):
-  assert isinstance(Y, np.ndarray)
-  assert len(Y.shape) == 2
-  assert isinstance(Yhat, np.ndarray)
-  assert Y.shape[0] == 9
-  assert Y.shape == Yhat.shape
-
-  m = Y.shape[1]
-
-  # Yhat is a matrix 9xm
-  # YhatVmax is a matrix 1xm with max value in each column of Yhat
-  YhatVmax = np.max(Yhat, axis = 0)
-  # Mast is a matrix 9xm with zeros ans a single 1 in each column
-  Mask = (Yhat == YhatVmax).astype(int)
-  assert np.sum(Mask) == m
-
-
-  YMask = Y * Mask
-  YhatMask = Yhat * Mask
-
-  YhatMaskFlat = np.sum(YhatMask, axis = 0).reshape(1, m)
-  YMaskFlat = np.sum(YMask, axis = 0).reshape(1, m)
-
-  cost = YMaskFlat * np.log(YhatMaskFlat) + (1 - YMaskFlat) * np.log(1 - YhatMaskFlat)
-
-  cost = np.sum(cost)
-  cost = cost * -1 / m
-
-  return cost
-
-
-
-'''
-Receives Y and Yhat
-(both are numpy arrays 9 x m)
 Calculates classic cost function and returns it
 '''
-def costFunction2(Y, Yhat):
+def costFunction(Y, Yhat):
   assert isinstance(Y, np.ndarray)
   assert len(Y.shape) == 2
   assert isinstance(Yhat, np.ndarray)
@@ -148,8 +110,9 @@ def calcGradients(W, b, X, Y, epsilon = 1e-3):
 '''
 Receives layers, weights, bias, initial entries, and Y
 Calculates and returns derivatives for each weight and bias
+using back-prop
 '''
-def calcGradients2(n, W, b, X, Y):
+def backPropagation(n, W, b, X, Y):
   L = len(W)
   assert len(W) == L
 
@@ -224,6 +187,27 @@ def calcGradients2(n, W, b, X, Y):
   return (dW, db, A)
 
 
+
+'''
+Receives layers, weights, bias, initial entries and Y
+Compares detivatives calculated with calcGradients and backPropagation
+(if the difference between them is less than epsilon)
+Returns true if they look alike
+'''
+def checkBackPropagation(n, W, b, X, Y, epsilon = 1e-7):
+  (dW1, db1) = calcGradients(W, b, X, Y)
+  (dW2, db2, _) = backPropagation(n, W, b, X, Y)
+
+  theta1 = reshapeInTheta(dW1, db1)
+  theta2 = reshapeInTheta(dW2, db2)
+
+  diff = np.linalg.norm(theta1 - theta2) / (np.linalg.norm(theta1) + np.linalg.norm(theta2))
+
+  if diff < epsilon:
+    print("diff:")
+    print(diff)
+
+  return diff < epsilon
 
 '''
 Receives NN weights and bias
