@@ -237,3 +237,15 @@ def reshapePositionInVector(position):
   assert position.shape == (3, 3)
 
   return position.reshape(9, 1)
+
+
+
+'''
+Receives vector
+Returns position
+'''
+def positionFromVector(vector):
+  assert isinstance(vector, np.ndarray)
+  assert vector.size == 9
+
+  return vector.reshape(3, 3)
