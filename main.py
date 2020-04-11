@@ -29,15 +29,15 @@ def trainModelScenario(n, fname, alpha = 0.001, iterations = 10000):
 
     if i % 10 == 0:
       print('iteration ' + str(i))
-      AL = model.forwardPropagation(W, b, X)
-      # cost = model.costFunction(Y, AL)
-      cost = model.costFunction(Y, A[L])
+      (aL, _) = model.forwardPropagation(W, b, X)
+      cost = model.costFunction(Y, aL)
+      # cost = model.costFunction(Y, A[L])
       # print('alpha')
       # print(alpha)
       print('cost')
       print(cost)
 
-    if i % 2 == 0:
+    if i % 100 == 0:
       is_back_prop_correct = model.checkBackPropagation(n, W, b, X, Y)
 
       if not is_back_prop_correct:
@@ -85,10 +85,10 @@ def testModel(fname):
     raw_input("Press Enter to continue...")
 
 
-trainModelScenario(n = [9, 9, 9, 9], fname = '9x9x9x9.model', alpha = 0.01, iterations=2000)
+trainModelScenario(n = [9, 9], fname = '9x9.model', alpha = 1, iterations=10000)
 
 
-# testModel('9x9.model')
-testModel('9x9x9x9.model')
+testModel('9x9.model')
+# testModel('9x9x9x9.model')
 # testModel('9x81x81x9.model')
 # training.generateAndSaveTrainingExamples(1000)

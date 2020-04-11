@@ -4,22 +4,9 @@ import numpy as np
 
 '''
 Receives NN weights, bias, and initial entries matrix 9 x m
-Calculates and returns the result 9 x m vector
-'''
-def forwardPropagation(W, b, X):
-  A = forwardPropagation2(W, b, X)
-
-  L = len(W)
-
-  return A[L]
-
-
-
-'''
-Receives NN weights, bias, and initial entries matrix 9 x m
 Calculates and returns A for each layer
 '''
-def forwardPropagation2(W, b, X):
+def forwardPropagation(W, b, X):
   assert isinstance(W, np.ndarray)
   # assert len(W.shape) == 3
   assert isinstance(b, np.ndarray)
@@ -47,7 +34,7 @@ def forwardPropagation2(W, b, X):
   # ALexpSum = np.sum(ALexp, axis = 0).reshape(1, m)
   # A[L] = ALexp / ALexpSum
 
-  return A
+  return (A[L], A)
 
 
 
@@ -86,14 +73,14 @@ def calcGradients(W, b, X, Y, epsilon = 1e-3):
     theta1 = np.copy(theta)
     theta1[i] -= epsilon
     (W1, b1) = reshapeFromTheta(theta1, WCopy)
-    AL1 = forwardPropagation(W1, b1, X)
-    cost1 = costFunction(Y, AL1)
+    (aL1, _) = forwardPropagation(W1, b1, X)
+    cost1 = costFunction(Y, aL1)
 
     theta2 = np.copy(theta)
     theta2[i] += epsilon
     (W2, b2) = reshapeFromTheta(theta2, WCopy)
-    AL2 = forwardPropagation(W2, b2, X)
-    cost2 = costFunction(Y, AL2)
+    (aL2, _) = forwardPropagation(W2, b2, X)
+    cost2 = costFunction(Y, aL2)
 
     d = (cost2 - cost1) / (2 * epsilon)
 
@@ -112,14 +99,14 @@ Receives layers, weights, bias, initial entries, and Y
 Calculates and returns derivatives for each weight and bias
 using back-prop
 '''
-def backPropagation(n, W, b, X, Y):
+def backPropagationOld(n, W, b, X, Y):
   L = len(W)
   assert len(W) == L
 
   m = Y.shape[1]
 
   # calculate A for all layers
-  A = forwardPropagation2(W, b, X)
+  (_, A) = forwardPropagation(W, b, X)
 
   # create dW and db
   dW = np.array([np.zeros(W[0].shape), np.zeros(W[1].shape), np.zeros(W[2].shape)])
@@ -189,21 +176,62 @@ def backPropagation(n, W, b, X, Y):
 
 
 '''
+Receives layers, weights, bias, initial entries, and Y
+Calculates and returns derivatives for each weight and bias
+using back-prop
+'''
+def backPropagation(n, W, b, X, Y):
+  L = len(W)
+  assert len(W) == L
+
+  m = Y.shape[1]
+
+  dW = np.array([np.zeros(W[0].shape)])
+  db = np.array([np.zeros(b[0].shape)])
+
+  # calculate A for all layers
+  (_, A) = forwardPropagation(W, b, X)
+
+  aL = A[L]
+
+  for i in range(m):
+    aLi = aL[:, i].reshape(len(aL), 1)
+
+    yi = Y[:, i].reshape(len(Y), 1)
+
+    dzLi = aLi - yi
+
+    xi = X[:, i].reshape(len(dW[0][0]), 1)
+
+    dwi = np.dot(dzLi, xi.T)
+
+    dW += dwi
+
+    db += dzLi
+
+  dW = dW / m
+  db = db / m
+
+  return (dW, db, A)
+
+'''
 Receives layers, weights, bias, initial entries and Y
 Compares detivatives calculated with calcGradients and backPropagation
 (if the difference between them is less than epsilon)
 Returns true if they look alike
 '''
-def checkBackPropagation(n, W, b, X, Y, epsilon = 1e-7):
+def checkBackPropagation(n, W, b, X, Y, epsilon = 1e-5):
   (dW1, db1) = calcGradients(W, b, X, Y)
   (dW2, db2, _) = backPropagation(n, W, b, X, Y)
 
   theta1 = reshapeInTheta(dW1, db1)
   theta2 = reshapeInTheta(dW2, db2)
 
+  allTheta = np.concatenate((theta1, theta2), axis = 1)
+
   diff = np.linalg.norm(theta1 - theta2) / (np.linalg.norm(theta1) + np.linalg.norm(theta2))
 
-  if diff < epsilon:
+  if diff > epsilon:
     print("diff:")
     print(diff)
 
@@ -320,8 +348,8 @@ def predict(W, b, x):
   assert isinstance(x, np.ndarray)
   assert x.shape == (9, 1)
 
-  a = forwardPropagation(W, b, x)
-  maxIndex = a.argmax()
+  (aL, _) = forwardPropagation(W, b, x)
+  maxIndex = aL.argmax()
 
   if x[maxIndex] == 0:
     y = np.zeros((9, 1))
@@ -329,9 +357,9 @@ def predict(W, b, x):
 
     return y
 
-  a[maxIndex] = 0
+  aL[maxIndex] = 0
 
-  maxIndex = a.argmax()
+  maxIndex = aL.argmax()
 
   if x[maxIndex] == 0:
     y = np.zeros((9, 1))
@@ -339,9 +367,9 @@ def predict(W, b, x):
 
     return y
 
-  a[maxIndex] = 0
+  aL[maxIndex] = 0
 
-  maxIndex = a.argmax()
+  maxIndex = aL.argmax()
 
   y = np.zeros((9, 1))
   y[maxIndex] = 1
