@@ -7,6 +7,19 @@ Receives NN weights, bias, and initial entries matrix 9 x m
 Calculates and returns the result 9 x m vector
 '''
 def forwardPropagation(W, b, X):
+  A = forwardPropagation2(W, b, X)
+
+  L = len(W)
+
+  return A[L]
+
+
+
+'''
+Receives NN weights, bias, and initial entries matrix 9 x m
+Calculates and returns A for each layer
+'''
+def forwardPropagation2(W, b, X):
   assert isinstance(W, np.ndarray)
   # assert len(W.shape) == 3
   assert isinstance(b, np.ndarray)
@@ -34,7 +47,7 @@ def forwardPropagation(W, b, X):
   # ALexpSum = np.sum(ALexp, axis = 0).reshape(1, m)
   # A[L] = ALexp / ALexpSum
 
-  return A[L]
+  return A
 
 
 
@@ -53,8 +66,13 @@ def costFunction(Y, Yhat):
 
   m = Y.shape[1]
 
+  # Yhat is a matrix 9xm
+  # YhatVmax is a matrix 1xm with max value in each column of Yhat
   YhatVmax = np.max(Yhat, axis = 0)
+  # Mast is a matrix 9xm with zeros ans a single 1 in each column
   Mask = (Yhat == YhatVmax).astype(int)
+  assert np.sum(Mask) == m
+
 
   YMask = Y * Mask
   YhatMask = Yhat * Mask
@@ -66,6 +84,28 @@ def costFunction(Y, Yhat):
 
   cost = np.sum(cost)
   cost = cost * -1 / m
+
+  return cost
+
+
+
+'''
+Receives Y and Yhat
+(both are numpy arrays 9 x m)
+Calculates classic cost function and returns it
+'''
+def costFunction2(Y, Yhat):
+  assert isinstance(Y, np.ndarray)
+  assert len(Y.shape) == 2
+  assert isinstance(Yhat, np.ndarray)
+  assert Y.shape[0] == 9
+  assert Y.shape == Yhat.shape
+
+  m = Y.shape[1]
+
+  cosmMatrix = (Y * np.log(Yhat) + (1 - Y) * np.log(1 - Yhat))
+
+  cost = np.sum(cosmMatrix) * -1.0 / m
 
   return cost
 
@@ -102,6 +142,86 @@ def calcGradients(W, b, X, Y, epsilon = 1e-3):
   (dW, db) = reshapeFromTheta(dTheta, WCopy)
 
   return (dW, db)
+
+
+
+'''
+Receives layers, weights, bias, initial entries, and Y
+Calculates and returns derivatives for each weight and bias
+'''
+def calcGradients2(n, W, b, X, Y):
+  L = len(W)
+  assert len(W) == L
+
+  m = Y.shape[1]
+
+  # calculate A for all layers
+  A = forwardPropagation2(W, b, X)
+
+  # create dW and db
+  dW = np.array([np.zeros(W[0].shape), np.zeros(W[1].shape), np.zeros(W[2].shape)])
+  db = np.array([np.zeros(b[0].shape), np.zeros(b[1].shape), np.zeros(b[2].shape)])
+
+  for i in range(m):
+    a3i = A[3].T[i].reshape(1, len(A[3]))
+    # assert a3i.shape == (1, 9)
+
+    yi = Y.T[i].reshape(1, len(Y))
+    # assert yi.shape == (1, 9)
+
+    dz3i = a3i - yi
+    # assert dz3i.shape == (1, 9)
+
+    # assert dW[2].shape == (9, 18)
+    # assert len(dW[2]) == 9
+
+    a2i = A[2].T[i].reshape(1, len(dW[2][0])) # 1, 18
+    # assert a2i.shape == (1, 18)
+
+    dw2i = np.dot(dz3i.T, a2i)
+    # assert dw2i.shape == (9, 18)
+    # assert dW[2].shape == (9, 18)
+
+    dW[2] += dw2i
+    # assert dW[2].shape == (9, 18)
+
+    db[2] += dz3i.T
+    # assert db[2].shape == (9, 1)
+
+    dz2i = a2i * (1 - a2i)
+    # assert dz2i.shape == (1, 18)
+
+    a1i = A[1].T[i].reshape(1, len(dW[1][0])) # 1, 18
+    # assert a1i.shape == (1, 18)
+
+    dw1i = np.dot(dz2i.T, a1i)
+    # assert dw1i.shape == (18, 18)
+
+    dW[1] += dw1i
+    # assert dW[1].shape == (18, 18)
+
+    db[1] += dz2i.T
+    # assert db[1].shape == (18, 1)
+
+    dz1i = a1i * (1 - a1i)
+    # assert dz1i.shape == (1, 18)
+
+    a0i = A[0].T[i].reshape(1, len(dW[0][0])) # 1, 9
+    # assert a0i.shape == (1, 9)
+
+    dw0i = np.dot(dz1i.T, a0i)
+    # assert dw0i.shape == (18, 9)
+
+    dW[0] += dw0i
+    # assert dW[0].shape == (18, 9)
+
+    db[0] += dz1i.T
+    # assert db[0].shape == (18, 1)
+
+  dW = dW / m
+  db = db / m
+
+  return (dW, db, A)
 
 
 
@@ -273,10 +393,13 @@ def saveModel(layers, W, b, fname = 'test.model'):
   flatLayers = np.array(flatLayers)
   flatLayers = flatLayers.reshape(flatLayers.size, 1)
 
-  flatW = W.reshape(W.size, 1)
-  flatb = b.reshape(b.size, 1)
+  for i in range(len(layers) - 1):
+    flatWi = W[i].reshape(W[i].size, 1)
 
-  result = np.concatenate((flatLayers, flatW, flatb), axis = 0)
+    flatW = flatWi if i == 0 else np.concatenate((flatW, flatWi), axis = 0)
+    flatb = b[i] if i == 0 else np.concatenate((flatb, b[i]), axis = 0)
+
+  result = np.concatenate((flatLayers, flatW, flatb))
   # print(result)
 
   np.savetxt(fname, result, delimiter=',')
