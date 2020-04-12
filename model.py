@@ -113,25 +113,19 @@ def backPropagation(n, W, b, X, Y):
 
   aL = A[L]
 
-  for i in range(m):
-    aLi = aL[:, i].reshape(len(aL), 1)
+  dzL = (aL - Y)
 
-    yi = Y[:, i].reshape(len(Y), 1)
+  dWL = np.dot(dzL, X.T) / m
 
-    dzLi = aLi - yi
+  dW = np.array([dWL])
 
-    xi = X[:, i].reshape(len(dW[0][0]), 1)
+  dbL = dzL.sum(axis=1).reshape(b[L - 1].shape) / m
 
-    dwi = np.dot(dzLi, xi.T)
-
-    dW += dwi
-
-    db += dzLi
-
-  dW = dW / m
-  db = db / m
+  db = np.array([dbL])
 
   return (dW, db, A)
+
+
 
 '''
 Receives layers, weights, bias, initial entries and Y
@@ -145,8 +139,6 @@ def checkBackPropagation(n, W, b, X, Y, epsilon = 1e-5):
 
   theta1 = reshapeInTheta(dW1, db1)
   theta2 = reshapeInTheta(dW2, db2)
-
-  allTheta = np.concatenate((theta1, theta2), axis = 1)
 
   diff = np.linalg.norm(theta1 - theta2) / (np.linalg.norm(theta1) + np.linalg.norm(theta2))
 
