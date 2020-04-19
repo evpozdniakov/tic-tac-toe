@@ -184,10 +184,11 @@ def reshapeFromTheta(theta, WCopy):
 
   W = []
   b = []
-  startIndex = 0
+  endIndex = 0
 
   for i in range(len(WCopy)):
     wSize = WCopy[i].size
+    startIndex = endIndex
     endIndex = startIndex + wSize
     W.append(theta[startIndex:endIndex])
     W[i] = W[i].reshape(WCopy[i].shape)
