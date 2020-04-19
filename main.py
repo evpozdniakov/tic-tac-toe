@@ -4,9 +4,9 @@ import model
 import position
 
 
-def trainModelScenario(n, fname, alpha = 0.001, iterations = 10000):
+def trainModelScenario(n, model_fname, training_examples_fname, m=0, alpha=0.001, iterations=10000):
   (W, b) = model.initializeWeights(n)
-  ex = training.readTrainingExamples(24)
+  ex = training.readTrainingExamples(m, fname=training_examples_fname)
 
   X = ex['X']
   # assert X.shape == (9, 500)
@@ -17,7 +17,7 @@ def trainModelScenario(n, fname, alpha = 0.001, iterations = 10000):
 
   # L is a number of NN layers
   # (L = 3 for a model 9x18x18x9)
-  L = len(W)
+  L = len(n) - 1
   assert len(W) == L
 
 
@@ -37,7 +37,7 @@ def trainModelScenario(n, fname, alpha = 0.001, iterations = 10000):
       print('cost')
       print(cost)
 
-    if i % 100 == 0:
+    if i % 10 == 0:
       is_back_prop_correct = model.checkBackPropagation(n, W, b, X, Y)
 
       if not is_back_prop_correct:
@@ -46,24 +46,18 @@ def trainModelScenario(n, fname, alpha = 0.001, iterations = 10000):
 
   print('------ end -------')
 
-  model.saveModel(n, W, b, fname)
-  # res = model.loadModel('9x9.model')
-  # print(res['n'])
-  # print(W.shape)
-  # print(W)
-  # print(res['W'].shape)
-  # print(res['W'])
+  model.saveModel(n, W, b, model_fname)
 
 
 
-def testModel(fname):
-  modelInstance = model.loadModel(fname)
+def testModel(model_fname, training_examples_fname, m=0):
+  modelInstance = model.loadModel(model_fname)
 
   # n = model9x9['n']
   W = modelInstance['W']
   b = modelInstance['b']
 
-  trainingExamples = training.readTrainingExamples(100)
+  trainingExamples = training.readTrainingExamples(m, fname=training_examples_fname)
 
   for i in range(100):
     x = trainingExamples['X'].T[i]
@@ -85,10 +79,10 @@ def testModel(fname):
     raw_input("Press Enter to continue...")
 
 
-trainModelScenario(n = [9, 9], fname = '9x9.model', alpha = 1, iterations=10000)
+# trainModelScenario(n = [9, 18, 9], model_fname = '9x18x9.model', training_examples_fname='m_training_examples_24.csv', alpha = 3, iterations=30)
 
 
-testModel('9x9.model')
+testModel(model_fname='9x18x9.model', training_examples_fname='m_training_examples_24.csv')
 # testModel('9x9x9x9.model')
 # testModel('9x81x81x9.model')
 # training.generateAndSaveTrainingExamples(1000)

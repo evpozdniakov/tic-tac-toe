@@ -212,8 +212,8 @@ def generateAndSaveTrainingExamples(m):
 '''
 Reads and returns training examples
 '''
-def readTrainingExamples(m = 0, fileName = 'm_training_examples.csv'):
-  raw = np.loadtxt(fileName, delimiter=',')
+def readTrainingExamples(m=0, fname='m_training_examples.csv'):
+  raw = np.loadtxt(fname, delimiter=',')
   XY = raw.T
   X = XY[0:9, :].astype(np.int8)
   Y = XY[9:18, :].astype(np.float32)
