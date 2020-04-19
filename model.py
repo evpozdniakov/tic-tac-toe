@@ -52,9 +52,9 @@ def costFunction(Y, Yhat):
 
   m = Y.shape[1]
 
-  cosmMatrix = (Y * np.log(Yhat) + (1 - Y) * np.log(1 - Yhat))
+  cosmMatrix = -1 * (Y * np.log(Yhat) + (1 - Y) * np.log(1 - Yhat))
 
-  cost = np.sum(cosmMatrix) * -1.0 / m
+  cost = np.sum(cosmMatrix) / m
 
   return cost
 
@@ -100,28 +100,35 @@ Calculates and returns derivatives for each weight and bias
 using back-prop
 '''
 def backPropagation(n, W, b, X, Y):
-  L = len(W)
+  L = len(n) - 1 # L=1 for n=[9,9] as first layer is "zero" layer
   assert len(W) == L
 
   m = Y.shape[1]
 
-  dW = np.array([np.zeros(W[0].shape)])
-  db = np.array([np.zeros(b[0].shape)])
-
   # calculate A for all layers
   (_, A) = forwardPropagation(W, b, X)
 
-  aL = A[L]
 
-  dzL = (aL - Y)
+  dW = []
+  db = []
 
-  dWL = np.dot(dzL, X.T) / m
+  for l in range(L, 0, -1): # l=2,1 for L=2, n=[9,18,9]
+    if l == L:
+      dZl = (A[L] - Y)
+    else:
+      dZl = A[l] * (1 - A[l]) * da
 
-  dW = np.array([dWL])
+    da = np.dot(W[l - 1].T, dZl)
 
-  dbL = dzL.sum(axis=1).reshape(b[L - 1].shape) / m
+    dWl = np.dot(dZl, A[l - 1].T)
+    dWl = dWl / m
+    dW.insert(0, dWl)
 
-  db = np.array([dbL])
+    dbl = dZl.sum(axis = 1).reshape(b[l - 1].shape) / m
+    db.insert(0, dbl)
+
+  dW = np.array(dW)
+  db = np.array(db)
 
   return (dW, db, A)
 
@@ -143,7 +150,7 @@ def checkBackPropagation(n, W, b, X, Y, epsilon = 1e-5):
   diff = np.linalg.norm(theta1 - theta2) / (np.linalg.norm(theta1) + np.linalg.norm(theta2))
 
   if diff > epsilon:
-    print("diff:")
+    print("\ndiff:")
     print(diff)
 
   return diff < epsilon
