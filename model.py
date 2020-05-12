@@ -304,7 +304,7 @@ def predict(W, b, x):
   assert isinstance(b, np.ndarray)
   assert isinstance(x, np.ndarray)
 
-  assert training.isProperTrainingXData(x)
+  assert training.is_proper_training_X_data(x)
 
   debug = False
 

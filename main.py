@@ -77,7 +77,7 @@ def train_model_scenario_2(n, model_fname, opponet_model_fname, alpha=0.1, itera
     if model_fname == opponet_model_fname:
       make_movement_fn = lambda x: model.predict(W, b, x)
 
-    ex = training.makeTrainingExamples(make_movement_fn)
+    ex = training.make_training_examples(make_movement_fn)
 
     X = ex['X']
     Y = ex['Y']
@@ -207,7 +207,7 @@ def train_model_scenario_4(model_fname, opponet_model_fname, alpha0=0.1, iterati
     if make_movement_fn == None:
       make_movement_fn = lambda x: model.predict(W, b, x)
 
-    ex = training.makeTrainingExamples(make_movement_fn)
+    ex = training.make_training_examples(make_movement_fn)
 
     X = ex['X']
     Y = ex['Y']
