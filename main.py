@@ -514,4 +514,4 @@ def test_position(model_fname):
 # test_position('9x18x18x18x18x9.model')
 # training.test_model(model_fname='9x81x81x81x9.model')
 
-model.play_the_game('9x18x18x18x18x9.model', '9x36x36x36x36x9.model')
+model.play_two_games('9x18x18x18x18x9.model', '9x36x36x36x36x9.model')

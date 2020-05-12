@@ -254,40 +254,44 @@ def load(fname):
 
 
 '''
-Receives layers structure list (e.g. [9, 9])
-weights, bias, and file name. Saves all data in a file. 
+Receives file names of two models A and B.
+Plays one game where model A starts.
+Shows game results.
 '''
-def save(n, W, b, fname):
-  assert isinstance(fname, str)
-  assert isinstance(n, list)
-  assert isinstance(W, np.ndarray)
-  assert isinstance(b, np.ndarray)
+def play_one_game(model1_fname, model2_fname):
+  model1 = load(model1_fname)
+  model2 = load(model2_fname)
 
-  flatLayers = [len(n)]
-  flatLayers.extend(n)
-  flatLayers = np.array(flatLayers)
-  flatLayers = flatLayers.reshape(flatLayers.size, 1)
+  game_position = position.make_zero_position()
 
-  for i in range(len(n) - 1):
-    flatWi = W[i].reshape(W[i].size, 1)
+  print('%s starts' % (model1_fname))
 
-    flatW = flatWi if i == 0 else np.concatenate((flatW, flatWi), axis = 0)
-    flatb = b[i] if i == 0 else np.concatenate((flatb, b[i]), axis = 0)
+  while True:
+    movement = predict(model1['W'], model1['b'], position.reshapePositionInVector(game_position))
+    game_position = position.change_position_with_movement_vector(game_position, movement)
 
-  result = np.concatenate((flatLayers, flatW, flatb))
-  # print(result)
+    if not position.isFinalPosition(game_position):
+      inverted_position = position.inversePosition(game_position)
+      movement = predict(model2['W'], model2['b'], position.reshapePositionInVector(inverted_position))
+      inverted_position = position.change_position_with_movement_vector(inverted_position, movement)
+      game_position = position.inversePosition(inverted_position)
 
-  np.savetxt(fname, result, delimiter=',')
+    if position.isFinalPosition(game_position):
+      position.printPosition(game_position)
+      break
 
 
 
 '''
-Receives file names of two models.
-Plays two games and Shows the results.
+Receives file names of two models A and B.
+Plays two games:
+- first where model A starts
+- second where model B starts
+Shows game results.
 '''
-def play_the_game(model1_fname, model2_fname):
-  _play_the_game(model1_fname, model2_fname)
-  _play_the_game(model2_fname, model1_fname)
+def play_two_games(model1_fname, model2_fname):
+  play_one_game(model1_fname, model2_fname)
+  play_one_game(model2_fname, model1_fname)
 
 
 
@@ -330,6 +334,34 @@ def predict(W, b, x):
     raw_input("...")
 
   return y
+
+
+
+'''
+Receives layers structure list (e.g. [9, 9])
+weights, bias, and file name. Saves all data in a file. 
+'''
+def save(n, W, b, fname):
+  assert isinstance(fname, str)
+  assert isinstance(n, list)
+  assert isinstance(W, np.ndarray)
+  assert isinstance(b, np.ndarray)
+
+  flatLayers = [len(n)]
+  flatLayers.extend(n)
+  flatLayers = np.array(flatLayers)
+  flatLayers = flatLayers.reshape(flatLayers.size, 1)
+
+  for i in range(len(n) - 1):
+    flatWi = W[i].reshape(W[i].size, 1)
+
+    flatW = flatWi if i == 0 else np.concatenate((flatW, flatWi), axis = 0)
+    flatb = b[i] if i == 0 else np.concatenate((flatb, b[i]), axis = 0)
+
+  result = np.concatenate((flatLayers, flatW, flatb))
+  # print(result)
+
+  np.savetxt(fname, result, delimiter=',')
 
 
 
@@ -420,24 +452,3 @@ def _reshape_from_theta(theta, WCopy):
 
 
 
-def _play_the_game(model1_fname, model2_fname):
-  model1 = load(model1_fname)
-  model2 = load(model2_fname)
-
-  game_position = position.make_zero_position()
-
-  print('%s starts' % (model1_fname))
-
-  while True:
-    movement = predict(model1['W'], model1['b'], position.reshapePositionInVector(game_position))
-    game_position = position.change_position_with_movement_vector(game_position, movement)
-
-    if not position.isFinalPosition(game_position):
-      inverted_position = position.inversePosition(game_position)
-      movement = predict(model2['W'], model2['b'], position.reshapePositionInVector(inverted_position))
-      inverted_position = position.change_position_with_movement_vector(inverted_position, movement)
-      game_position = position.inversePosition(inverted_position)
-
-    if position.isFinalPosition(game_position):
-      position.printPosition(game_position)
-      break
