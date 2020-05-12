@@ -7,7 +7,7 @@ import position
 '''
 Trains model with static tainig examples (read from file).
 '''
-def trainModelScenario1(n, model_fname, training_examples_fname, m=0, alpha=0.001, iterations=10000):
+def train_model_scenario_1(n, model_fname, training_examples_fname, m=0, alpha=0.001, iterations=10000):
   debug = False
 
   (W, b) = model.initialize_weights(n)
@@ -59,7 +59,7 @@ def trainModelScenario1(n, model_fname, training_examples_fname, m=0, alpha=0.00
 '''
 Trains model continously with generated training examples
 '''
-def trainModelScenario2(n, model_fname, opponet_model_fname, alpha=0.1, iterations=5000):
+def train_model_scenario_2(n, model_fname, opponet_model_fname, alpha=0.1, iterations=5000):
   alpha0 = alpha
   decay_rate = 0.01
   modelInstance = model.load(opponet_model_fname)
@@ -116,7 +116,7 @@ def trainModelScenario2(n, model_fname, opponet_model_fname, alpha=0.1, iteratio
 '''
 Trains model with static tainig examples (read from file).
 '''
-def trainModelScenario3(n, model_fname, training_examples_fname, m=0, alpha=0.001, beta=0.9, iterations=10000):
+def train_model_scenario_3(n, model_fname, training_examples_fname, m=0, alpha=0.001, beta=0.9, iterations=10000):
   debug = False
 
   modelInstance = model.load(model_fname)
@@ -181,7 +181,7 @@ def trainModelScenario3(n, model_fname, training_examples_fname, m=0, alpha=0.00
 Trains model continously with generated training examples
 Testing with training.test_model
 '''
-def trainModelScenario4(model_fname, opponet_model_fname, alpha0=0.1, iterations=50000, beta=0.9):
+def train_model_scenario_4(model_fname, opponet_model_fname, alpha0=0.1, iterations=50000, beta=0.9):
   debug = False
 
   model_instance = model.load(model_fname)
@@ -381,7 +381,12 @@ def trainModelScenario4(model_fname, opponet_model_fname, alpha0=0.1, iterations
 
 
 
-def testModel(model_fname, training_examples_fname, m=0):
+'''
+Loads model and training examples
+Then shows how the model predicts on each example
+Shall be removed.
+'''
+def test_model_on_static_examples(model_fname, training_examples_fname, m=0):
   modelInstance = model.load(model_fname)
 
   # n = model9x9['n']
@@ -415,18 +420,26 @@ def testModel(model_fname, training_examples_fname, m=0):
 
 
 
-def displayTrainingExamples(X, Y):
+'''
+Receives X and Y of training examples
+Draws positions and movement weights.
+'''
+def display_training_examples(X, Y):
   XT = X.T
   YT = Y.T
 
   for i in range(len(XT)):
     x = XT[i]
     y = YT[i]
-    displayTrainingExample(x, y)
+    display_signle_training_example(x, y)
 
 
 
-def displayTrainingExample(x, y):
+'''
+Same as display_training_examples
+but for signle training example
+'''
+def display_signle_training_example(x, y):
   nextPosition = position.positionFromVector(x)
 
   position.printPosition(nextPosition)
@@ -439,167 +452,9 @@ def displayTrainingExample(x, y):
 
 
 
-
-# trainModelScenario1(n = [9, 81, 81, 81, 9], model_fname='9x81x81x81x9.model', training_examples_fname='m_training_examples_1250.csv', alpha=0.3, iterations=3000)
-
-# trainModelScenario(n = [9, 18, 18, 9], model_fname = '9x18x18x9.model', training_examples_fname='m_training_examples_24.csv', alpha = 3, iterations=1000)
-# trainModelScenario(n = [9, 18, 9], model_fname = '9x18x9.model', training_examples_fname='m_training_examples_24.csv', alpha = 3, iterations=30)
-# trainModelScenario(n = [9, 9], model_fname = '9x9.model', training_examples_fname='m_training_examples_24.csv', alpha = 3, iterations=1000)
-# trainModelScenario2(n = [9, 27, 27, 27, 9], model_fname='9x27x27x27x9.model', opponet_model_fname='9x27x27x27x9.model')
-# trainModelScenario2(n = [9, 81, 81, 81, 9], model_fname='9x81x81x81x9.model', opponet_model_fname='9x45x45x45x9.model', iterations=1000, alpha=3)
-# # # trainModelScenario2(n = [9, 81, 81, 81, 81, 9], model_fname='9x81x81x81x81x9.model', opponet_model_fname='9x81x81x81x81x9.model', iterations=1000, alpha=1)
-
-
-# testModel(model_fname='9x9.model', training_examples_fname='m_training_examples_24.csv')
-# testModel(model_fname='9x18x9.model', training_examples_fname='m_training_examples.csv')
-# testModel(model_fname='9x18x18x9.model', training_examples_fname='m_training_examples.csv')
-# testModel(model_fname='9x27x27x9.model', training_examples_fname='m_training_examples.csv')
-# testModel(model_fname='9x27x27x27x9.model', training_examples_fname='m_training_examples.csv')
-# testModel(model_fname='9x81x81x81x9.model', training_examples_fname='m_training_examples_2500.csv')
-# testModel(model_fname='9x27x27x27x9.model', training_examples_fname='m_training_examples_500.csv')
-# testModel(model_fname='9x36x36x36x9.model', training_examples_fname='m_training_examples_1250.csv')
-# testModel('9x9x9x9.model')
-# testModel('9x81x81x9.model')
-
-# training.generate_and_save_m_training_examples(10000, traing_fname="m_training_examples_10000.csv")
-# trainModelScenario1(n = [9, 81, 81, 81, 9], model_fname='9x81x81x81x9.model', training_examples_fname='training_examples_100_percent.csv', alpha=1, iterations=3000)
-# trainModelScenario2(n = [9, 81, 81, 81, 9], model_fname='9x81x81x81x9.model', opponet_model_fname='9x81x81x81x9.model', iterations=2000, alpha=0.3)
-# trainModelScenario3(n = [9, 81, 81, 81, 9], model_fname='9x81x81x81x9.model', training_examples_fname='training_examples_100_percent.csv', alpha=1, iterations=1200)
-# testModel(model_fname='9x81x81x81x9.model', training_examples_fname='training_examples_25_percent.csv')
-# testModel(model_fname='9x81x81x81x9.model', training_examples_fname='training_examples_13_percent.csv')
-
-# training.filter_and_save_training_examples(reward=0.5, traing_fname="training_examples_50_percent.csv")
-# training.filter_and_save_training_examples(reward=0.25, traing_fname="training_examples_25_percent.csv")
-# training.filter_and_save_training_examples(reward=0.125, traing_fname="training_examples_13_percent.csv")
-
-# testModel(model_fname='9x81x81x81x9.model', training_examples_fname='m_training_examples_400.csv')
-
-# trainModelScenario4(n = [9, 81, 81, 81, 9], model_fname='9x81x81x81x9.model', opponet_model_fname='9x81x81x81x9.model', iterations=1000, alpha=0.3)
-# training.generate_and_save_m_training_examples(240, model_fname='9x81x81x81x81x81x81x9.model', traing_fname="m_training_examples_240.csv")
-# testModel(model_fname='9x81x81x81x81x81x81x9.model', training_examples_fname='m_training_examples_240.csv')
-
-# training.test_model(model_fname='9x81x81x81x9.model')
-
-
-
-
-
-def foo():
-  modelInstance = model.load('9x81x81x81x81x81x81x9.model')
-
-  n = modelInstance['n']
-  n = [9, 81, 81, 81, 81, 81, 81, 9]
-  # (W, b) = model.initializeWeights(n)
-  W = modelInstance['W']
-  b = modelInstance['b']
-
-  test_case = training.test_case_1()
-  # print(test_case)
-
-  for i in range(4):
-    x = test_case[i, 0:9].reshape(9, 1)
-    y = test_case[i, 9:18].reshape(9, 1)
-    position.printPosition(position.positionFromVector(x))
-    position.printMovement(y)
-
-    X = np.array(x)
-    Y = np.array(y)
-    (aL1, _) = model.forward_propagation(W, b, X)
-    (dW, db, _) = model.back_propagation(n, W, b, X, Y)
-
-    alpha = 0.03
-
-    for j in range(len(W)):
-      W[j] = W[j] - alpha * dW[j]
-      b[j] = b[j] - alpha * db[j]
-
-    (aL2, _) = model.forward_propagation(W, b, X)
-    print("al1/al2 results:")
-    print(np.concatenate((aL1, aL2, np.round((aL2 - aL1) * 1000)), axis=1))
-
-    raw_input("...")
-
-
-
-# trainModelScenario4(n = [9, 9, 9], model_fname='9x9x9.model', opponet_model_fname='9x9x9.model', iterations=3000, alpha=1)
-# foo()
-# training.generate_and_save_m_training_examples(3000, traing_fname="m_training_examples_3000.csv", model_fname='9x45x45x45x45x9.model')
-# testModel(model_fname='9x45x45x45x45x9.model', training_examples_fname='m_training_examples_3000.csv')
-# training.test_model(model_fname='9x45x45x45x45x9.model')
-
-
-# trainModelScenario3(n = [9, 45, 45, 45, 45, 9], model_fname='9x45x45x45x45x9.model', training_examples_fname='m_training_examples_30000.csv', alpha=3, iterations=10000)
-# trainModelScenario4(model_fname='9x27x27x27x9.model', opponet_model_fname='9x27x27x27x9.model', iterations=300000, alpha0=30)
-
-def create_model(n, model_fname):
-  # n = [9, 81, 81, 81, 81, 81, 81, 9]
-  (W, b) = model.initialize_weights(n)
-  model.save(n, W, b, model_fname)
-
-# create_model([9, 27, 27, 27, 27, 9], '9x27x27x27x27x9.model')
-# create_model([9, 81, 81, 81, 81, 81, 81, 9], '9x81x81x81x81x81x81x9.model')
-
-def how_we_update_w_b(model_fname):
-  model_instance = model.load(model_fname)
-  n = model_instance['n']
-  W = model_instance['W']
-  b = model_instance['b']
-
-  # make_movement_fn = lambda x: model.predict(W, b, x)
-  # ex = training.makeTrainingExamples(make_movement_fn)
-
-  # X = ex['X']
-  # Y = ex['Y']
-
-  # print(X)
-  # print(Y)
-
-  # training.saveTrainingExamples({
-  #   'X': X,
-  #   'Y': Y,
-  # }, fileName='how_we_ex.csv')
-
-  ex = training.read_training_examples(0, 'how_we_ex.csv')
-
-  X = ex['X']
-  Y = ex['Y']
-
-  x = X.T[8].reshape(9, 1)
-  y = Y.T[8].reshape(9, 1)
-
-  # print(x)
-  print(y)
-
-  position.printPosition(position.positionFromVector(x))
-
-  (aL, _) = model.forward_propagation(W, b, x)
-  movement = model.predict(W, b, x)
-
-  print('aL')
-  print(aL)
-  print('movement')
-  print(movement)
-
-  # alpha = 3
-  # iterations = 10000
-
-  # for _ in range(iterations):
-  #   (dW, db, _) = model.back_propagation(n, W, b, X, Y)
-
-  #   W = W - alpha * dW
-  #   b = b - alpha * db
-
-  # (aL, _) = model.forward_propagation(W, b, x)
-  # movement = model.predict(W, b, x)
-
-  # print('aL')
-  # print(aL)
-  # print('movement')
-  # print(movement)
-
-
-# how_we_update_w_b('9x27x27x27x9.model')
-
+'''
+Quick visual test of a model.
+'''
 def test_position(model_fname):
   print('\ntest model: %s' % (model_fname))
   model_instance = model.load(model_fname)
@@ -653,9 +508,9 @@ def test_position(model_fname):
 
 
 # training.make_ideal_training_examples()
-# create_model([9, 18, 18, 18, 18, 9], '9x18x18x18x18x9.model')
-# trainModelScenario3(n = [9, 27, 27, 27, 27, 9], model_fname='9x27x27x27x27x9.model', training_examples_fname='m_training_examples_3000.csv', alpha=3, iterations=1000)
-# trainModelScenario4(model_fname='9x18x18x18x18x9.model', opponet_model_fname='9x18x18x18x18x9.model', iterations=300000, alpha0=1)
+# model.create([9, 18, 18, 18, 18, 9], '9x18x18x18x18x9.model')
+# train_model_scenario_3(n = [9, 27, 27, 27, 27, 9], model_fname='9x27x27x27x27x9.model', training_examples_fname='m_training_examples_3000.csv', alpha=3, iterations=1000)
+# train_model_scenario_4(model_fname='9x18x18x18x18x9.model', opponet_model_fname='9x18x18x18x18x9.model', iterations=300000, alpha0=1)
 # test_position('9x18x18x18x18x9.model')
 # training.test_model(model_fname='9x81x81x81x9.model')
 

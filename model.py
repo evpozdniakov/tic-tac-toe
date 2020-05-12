@@ -131,6 +131,17 @@ def cost_function(Y, Yhat):
 
 
 '''
+Receives model layers and file name.
+Creates model, initializes weights, and saves them in the file.
+'''
+def create(n, model_fname):
+  # n = [9, 81, 81, 81, 81, 81, 81, 9]
+  (W, b) = initialize_weights(n)
+  save(n, W, b, model_fname)
+
+
+
+'''
 Receives NN weights, bias, and initial entries matrix 9 x m
 Calculates and returns A for each layer
 '''
