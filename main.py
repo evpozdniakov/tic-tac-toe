@@ -226,10 +226,10 @@ def train_model_scenario_4(model_fname, opponet_model_fname, alpha0=0.1, iterati
       print(Y)
       for j in range(len(X.T) - 1, -1, -1):
         x = X.T[j]
-        nextPosition = position.positionFromVector(x)
-        x = position.reshapePositionInVector(nextPosition)
+        nextPosition = position.transform_vector_into_position(x)
+        x = position.transform_position_into_vector(nextPosition)
 
-        position.printPosition(nextPosition)
+        position.print_position(nextPosition)
 
         (aL, _) = model.forward_propagation(W, b, x)
 
@@ -239,12 +239,12 @@ def train_model_scenario_4(model_fname, opponet_model_fname, alpha0=0.1, iterati
         print('\n predicted ')
 
         movement = model.predict(W, b, x)
-        position.printMovement(movement)
+        position.print_movement(movement)
 
         print(' expected ')
 
         y = Y.T[j]
-        position.printMovement(y.reshape(9, 1))
+        position.print_movement(y.reshape(9, 1))
 
         raw_input("Press Enter to continue...")
 
@@ -309,31 +309,31 @@ def train_model_scenario_4(model_fname, opponet_model_fname, alpha0=0.1, iterati
             if (model.predict(Wprev, bprev, x) == y).all():
               if not (model.predict(W, b, x) == y).all():
                 print("\nfailed test position:")
-                position.printPosition(x.reshape(3, 3))
+                position.print_position(x.reshape(3, 3))
 
         if False:
           for j in range(len(X.T)):
             x = X.T[j]
-            nextPosition = position.positionFromVector(x)
+            nextPosition = position.transform_vector_into_position(x)
 
-            position.printPosition(nextPosition)
+            position.print_position(nextPosition)
 
             print(' predicted before')
 
-            x = position.reshapePositionInVector(nextPosition)
+            x = position.transform_position_into_vector(nextPosition)
             movement = model.predict(Wprev, bprev, x)
-            position.printMovement(movement)
+            position.print_movement(movement)
 
             print(' predicted after')
 
-            x = position.reshapePositionInVector(nextPosition)
+            x = position.transform_position_into_vector(nextPosition)
             movement = model.predict(W, b, x)
-            position.printMovement(movement)
+            position.print_movement(movement)
 
             print(' expected ')
 
             y = Y.T[j]
-            position.printMovement(y.reshape(9, 1))
+            position.print_movement(y.reshape(9, 1))
 
             raw_input("Press Enter to continue...")
 
@@ -401,20 +401,20 @@ def test_model_on_static_examples(model_fname, training_examples_fname, m=0):
   for i in range(1000):
     # i = round(np.random.rand() * m)
     x = trainingExamples['X'].T[i]
-    nextPosition = position.positionFromVector(x)
+    nextPosition = position.transform_vector_into_position(x)
 
-    position.printPosition(nextPosition)
+    position.print_position(nextPosition)
 
     print(' predicted ')
 
-    x = position.reshapePositionInVector(nextPosition)
+    x = position.transform_position_into_vector(nextPosition)
     movement = model.predict(W, b, x)
-    position.printMovement(movement)
+    position.print_movement(movement)
 
     print(' expected ')
 
     y = trainingExamples['Y'].T[i]
-    position.printMovement(y.reshape(9, 1))
+    position.print_movement(y.reshape(9, 1))
 
     raw_input("Press Enter to continue...")
 
@@ -440,13 +440,13 @@ Same as display_training_examples
 but for signle training example
 '''
 def display_signle_training_example(x, y):
-  nextPosition = position.positionFromVector(x)
+  nextPosition = position.transform_vector_into_position(x)
 
-  position.printPosition(nextPosition)
+  position.print_position(nextPosition)
 
   print(' expected ')
 
-  position.printMovement(y.reshape(9, 1))
+  position.print_movement(y.reshape(9, 1))
 
   raw_input("Press Enter to continue...")
 
@@ -472,13 +472,13 @@ def test_position(model_fname):
   ]).reshape(9, 1)
 
   print('\n')
-  position.printPosition(position.positionFromVector(x))
+  position.print_position(position.transform_vector_into_position(x))
 
   (aL, _) = model.forward_propagation(W, b, x)
   print("aL")
   print(aL)
   movement = model.predict(W, b, x)
-  position.printMovement(movement)
+  position.print_movement(movement)
 
 
   x = np.array([
@@ -497,13 +497,13 @@ def test_position(model_fname):
   ]).reshape(9, 1)
 
   print('\n')
-  position.printPosition(position.positionFromVector(x))
+  position.print_position(position.transform_vector_into_position(x))
 
   (aL, _) = model.forward_propagation(W, b, x)
   print("aL")
   print(aL)
   movement = model.predict(W, b, x)
-  position.printMovement(movement)
+  position.print_movement(movement)
 
 
 

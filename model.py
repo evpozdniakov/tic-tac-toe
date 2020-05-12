@@ -267,17 +267,17 @@ def play_one_game(model1_fname, model2_fname):
   print('%s starts' % (model1_fname))
 
   while True:
-    movement = predict(model1['W'], model1['b'], position.reshapePositionInVector(game_position))
+    movement = predict(model1['W'], model1['b'], position.transform_position_into_vector(game_position))
     game_position = position.change_position_with_movement_vector(game_position, movement)
 
-    if not position.isFinalPosition(game_position):
-      inverted_position = position.inversePosition(game_position)
-      movement = predict(model2['W'], model2['b'], position.reshapePositionInVector(inverted_position))
+    if not position.is_final_position(game_position):
+      inverted_position = position.invert_position(game_position)
+      movement = predict(model2['W'], model2['b'], position.transform_position_into_vector(inverted_position))
       inverted_position = position.change_position_with_movement_vector(inverted_position, movement)
-      game_position = position.inversePosition(inverted_position)
+      game_position = position.invert_position(inverted_position)
 
-    if position.isFinalPosition(game_position):
-      position.printPosition(game_position)
+    if position.is_final_position(game_position):
+      position.print_position(game_position)
       break
 
 
@@ -309,9 +309,9 @@ def predict(W, b, x):
   debug = False
 
   if debug:
-    received_position = position.positionFromVector(x)
+    received_position = position.transform_vector_into_position(x)
     print("received position:")
-    position.printPosition(received_position)
+    position.print_position(received_position)
 
   (aL, _) = forward_propagation(W, b, x)
 
@@ -327,9 +327,9 @@ def predict(W, b, x):
   y[maxIndex] = 1
 
   if debug:
-    y_position = position.positionFromVector(y)
+    y_position = position.transform_vector_into_position(y)
     print("prediction:")
-    position.printPosition(y_position)
+    position.print_position(y_position)
 
     raw_input("...")
 
