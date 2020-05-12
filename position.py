@@ -3,6 +3,42 @@ from termcolor import colored
 
 
 '''
+A position is a matrix 3x3 where
+  0 is an empty cell
+  1 is the main player movement "X"
+  -1 is the opponent player movement "O"
+'''
+
+'''
+Receives game position and a movement vector 9x1.
+Clones the position and changes it by placing 1 according
+to the movement vector. Returns changed position.
+'''
+def change_position_with_movement_vector(game_position, movement):
+  assert isinstance(game_position, np.ndarray)
+  assert game_position.shape == (3, 3)
+  assert isinstance(movement, np.ndarray)
+  assert movement.shape == (9, 1)
+
+  cloned_position = copy(game_position)
+  result_position = cloned_position + movement.reshape(3, 3)
+
+  assert game_position.sum() == result_position.sum() - 1
+
+  return result_position
+
+
+
+'''
+Receives a position.
+Creates and returns a copy of the position.
+'''
+def copy(position):
+  return np.multiply(np.ones((3, 3)), position).astype(np.int8)
+
+
+
+'''
 Receives a position
 and prints it out
 '''
@@ -36,7 +72,7 @@ def printMovement(movement):
     ['_', '_', '_'],
     ['_', '_', '_']]
 
-  movement2 = (movement * 10).astype(np.int)
+  movement2 = (movement * 1000).astype(np.int)
 
   for i in range(0, 3):
     for j in range(0, 3):
@@ -49,7 +85,7 @@ def printMovement(movement):
 
 
 '''
-Returns random position
+Returns real random position
 '''
 def randomPosition():
   m1 = np.random.rand(3, 3)
@@ -74,7 +110,11 @@ def inversePosition(position):
 
 
 '''
-Returns game position and returns True if it is a real position
+Returns game position and returns True if it is a real not fianlized position
+Real means position where the first movement was X (1)
+so number of X (1) is either equal to number of O (0)
+or one time bigger
+Not finalized means that it is not win, loss or draw
 '''
 def isRealPosition(position):
   assert isinstance(position, np.ndarray)
@@ -190,17 +230,28 @@ def isFinalPosition(position):
   return False
 
 
+
 '''
-Receives game position and returns random movement.
-A position is a matrix 3x3 where
-  0 is an empty cell
-  1 is main player X
-  -1 is opponent player O
+Returns true if the position has no movements yet.
+(All cells equal to zero.)
+'''
+def isZeroPosition(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+
+  return np.absolute(position).sum() == 0
+
+
+'''
+Receives real game position and returns coords of a random opponent's movement
+(places either 1 for main player or -1 for the opponent)
+Returns result position (which is either a real or a final position) and coords of the movement
 '''
 def makeRandomMovement(position):
   assert isinstance(position, np.ndarray)
   assert position.shape == (3, 3)
-  assert not isFinalPosition(position)
+  assert isRealPosition(position)
+
 
   emptyCellCoords = []
 
@@ -214,10 +265,11 @@ def makeRandomMovement(position):
   i2 = coords[0]
   j2 = coords[1]
 
-  # TODO make copyPosition
-  resultPosition = np.multiply(np.ones((3, 3)), position).astype(np.int8)
+  resultPosition = copy(position)
 
   resultPosition[i2][j2] = 1 if position.sum() == 0 else -1
+
+  assert isRealPosition(resultPosition) or isFinalPosition(resultPosition)
 
   movement = {
     'coords': coords,
@@ -225,6 +277,48 @@ def makeRandomMovement(position):
   }
 
   return movement
+
+
+
+'''
+Makes a movement to first available cell
+'''
+def makeFirstAvailableMovement(position):
+  assert isinstance(position, np.ndarray)
+  assert position.shape == (3, 3)
+  assert isRealPosition(position)
+
+
+  emptyCellCoords = []
+
+  for i in range(0, 3):
+    for j in range(0, 3):
+      if position[i][j] == 0:
+        emptyCellCoords.append((i, j))
+
+  coords = emptyCellCoords[0]
+  i2 = coords[0]
+  j2 = coords[1]
+
+  resultPosition = copy(position)
+
+  resultPosition[i2][j2] = 1 if position.sum() == 0 else -1
+
+  assert isRealPosition(resultPosition) or isFinalPosition(resultPosition)
+
+  movement = {
+    'coords': coords,
+    'resultPosition': resultPosition,
+  }
+
+  return movement
+
+
+
+'''
+'''
+def make_zero_position():
+  return np.zeros((3, 3)).astype(np.int8)
 
 
 

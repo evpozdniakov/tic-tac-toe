@@ -1,4 +1,132 @@
 import numpy as np
+import training
+import position
+
+
+
+'''
+Receives layers, weights, bias, initial entries, and Y
+Calculates and returns derivatives for each weight and bias
+using back-prop
+'''
+def back_propagation(n, W, b, X, Y):
+  L = len(n) - 1 # L=1 for n=[9,9] as first layer is "zero" layer
+  assert len(W) == L
+
+  m = Y.shape[1]
+
+  # calculate A for all layers
+  (_, A) = forward_propagation(W, b, X)
+
+
+  dW = []
+  db = []
+
+  for l in range(L, 0, -1): # l=2,1 for L=2, n=[9,18,9]
+    if l == L:
+      dZl = (A[L] - Y)
+      dZl = dZl * (Y > 0)
+    else:
+      dZl = A[l] * (1 - A[l]) * da
+
+    da = np.dot(W[l - 1].T, dZl)
+
+    dWl = np.dot(dZl, A[l - 1].T)
+    dWl = dWl / m
+    dW.insert(0, dWl)
+
+    dbl = dZl.sum(axis = 1).reshape(b[l - 1].shape) / m
+    db.insert(0, dbl)
+
+  dW = np.array(dW)
+  db = np.array(db)
+
+  return (dW, db, A)
+
+
+
+'''
+Receives weights, bias, and initial entries
+Calculates and returns derivatives for each weight and bias
+'''
+def calc_gradients(W, b, X, Y, epsilon = 1e-3):
+  theta = _reshape_in_theta(W, b)
+  dTheta = np.array([])
+  WCopy = np.copy(W)
+
+  for i in range(len(theta)):
+    theta1 = np.copy(theta)
+    theta1[i] -= epsilon
+    (W1, b1) = _reshape_from_theta(theta1, WCopy)
+    (aL1, _) = forward_propagation(W1, b1, X)
+    cost1 = cost_function(Y, aL1)
+
+    theta2 = np.copy(theta)
+    theta2[i] += epsilon
+    (W2, b2) = _reshape_from_theta(theta2, WCopy)
+    (aL2, _) = forward_propagation(W2, b2, X)
+    cost2 = cost_function(Y, aL2)
+
+    d = (cost2 - cost1) / (2 * epsilon)
+
+    dTheta = np.append(dTheta, d)
+
+  dTheta = np.array(dTheta).reshape(dTheta.size, 1)
+
+  (dW, db) = _reshape_from_theta(dTheta, WCopy)
+
+  return (dW, db)
+
+
+
+'''
+Receives layers, weights, bias, initial entries and Y
+Compares detivatives calculated with calcGradients and backPropagation
+(if the difference between them is less than epsilon)
+Returns true if they look alike
+'''
+def check_back_propagation(n, W, b, X, Y, epsilon = 1e-5):
+  (dW1, db1) = calc_gradients(W, b, X, Y)
+  (dW2, db2, _) = back_propagation(n, W, b, X, Y)
+
+  theta1 = _reshape_in_theta(dW1, db1)
+  theta2 = _reshape_in_theta(dW2, db2)
+
+  diff = np.linalg.norm(theta1 - theta2) / (np.linalg.norm(theta1) + np.linalg.norm(theta2))
+
+  if diff > epsilon:
+    print("\ndiff:")
+    print(diff)
+
+  return diff < epsilon
+
+
+
+'''
+Receives Y and Yhat
+(both are numpy arrays 9 x m)
+Calculates classic cost function and returns it
+'''
+def cost_function(Y, Yhat):
+  assert isinstance(Y, np.ndarray)
+  assert len(Y.shape) == 2
+  assert isinstance(Yhat, np.ndarray)
+  assert Y.shape[0] == 9
+  assert Y.shape == Yhat.shape
+
+  m = Y.shape[1]
+
+  cost_matrix = -1 * (Y * np.log(Yhat) + (1 - Y) * np.log(1 - Yhat))
+
+  # print("\nconst_matrix before")
+  # print(cost_matrix)
+  cost_matrix = cost_matrix * (Y > 0)
+  # print("\nconst_matrix after")
+  # print(cost_matrix)
+
+  cost = np.sum(cost_matrix) / m
+
+  return cost
 
 
 
@@ -6,7 +134,7 @@ import numpy as np
 Receives NN weights, bias, and initial entries matrix 9 x m
 Calculates and returns A for each layer
 '''
-def forwardPropagation(W, b, X):
+def forward_propagation(W, b, X):
   assert isinstance(W, np.ndarray)
   # assert len(W.shape) == 3
   assert isinstance(b, np.ndarray)
@@ -39,204 +167,11 @@ def forwardPropagation(W, b, X):
 
 
 '''
-Receives Y and Yhat
-(both are numpy arrays 9 x m)
-Calculates classic cost function and returns it
-'''
-def costFunction(Y, Yhat):
-  assert isinstance(Y, np.ndarray)
-  assert len(Y.shape) == 2
-  assert isinstance(Yhat, np.ndarray)
-  assert Y.shape[0] == 9
-  assert Y.shape == Yhat.shape
-
-  m = Y.shape[1]
-
-  cosmMatrix = -1 * (Y * np.log(Yhat) + (1 - Y) * np.log(1 - Yhat))
-
-  cost = np.sum(cosmMatrix) / m
-
-  return cost
-
-
-
-'''
-Receives weights, bias, and initial entries
-Calculates and returns derivatives for each weight and bias
-'''
-def calcGradients(W, b, X, Y, epsilon = 1e-3):
-  theta = reshapeInTheta(W, b)
-  dTheta = np.array([])
-  WCopy = np.copy(W)
-
-  for i in range(len(theta)):
-    theta1 = np.copy(theta)
-    theta1[i] -= epsilon
-    (W1, b1) = reshapeFromTheta(theta1, WCopy)
-    (aL1, _) = forwardPropagation(W1, b1, X)
-    cost1 = costFunction(Y, aL1)
-
-    theta2 = np.copy(theta)
-    theta2[i] += epsilon
-    (W2, b2) = reshapeFromTheta(theta2, WCopy)
-    (aL2, _) = forwardPropagation(W2, b2, X)
-    cost2 = costFunction(Y, aL2)
-
-    d = (cost2 - cost1) / (2 * epsilon)
-
-    dTheta = np.append(dTheta, d)
-
-  dTheta = np.array(dTheta).reshape(dTheta.size, 1)
-
-  (dW, db) = reshapeFromTheta(dTheta, WCopy)
-
-  return (dW, db)
-
-
-
-'''
-Receives layers, weights, bias, initial entries, and Y
-Calculates and returns derivatives for each weight and bias
-using back-prop
-'''
-def backPropagation(n, W, b, X, Y):
-  L = len(n) - 1 # L=1 for n=[9,9] as first layer is "zero" layer
-  assert len(W) == L
-
-  m = Y.shape[1]
-
-  # calculate A for all layers
-  (_, A) = forwardPropagation(W, b, X)
-
-
-  dW = []
-  db = []
-
-  for l in range(L, 0, -1): # l=2,1 for L=2, n=[9,18,9]
-    if l == L:
-      dZl = (A[L] - Y)
-    else:
-      dZl = A[l] * (1 - A[l]) * da
-
-    da = np.dot(W[l - 1].T, dZl)
-
-    dWl = np.dot(dZl, A[l - 1].T)
-    dWl = dWl / m
-    dW.insert(0, dWl)
-
-    dbl = dZl.sum(axis = 1).reshape(b[l - 1].shape) / m
-    db.insert(0, dbl)
-
-  dW = np.array(dW)
-  db = np.array(db)
-
-  return (dW, db, A)
-
-
-
-'''
-Receives layers, weights, bias, initial entries and Y
-Compares detivatives calculated with calcGradients and backPropagation
-(if the difference between them is less than epsilon)
-Returns true if they look alike
-'''
-def checkBackPropagation(n, W, b, X, Y, epsilon = 1e-5):
-  (dW1, db1) = calcGradients(W, b, X, Y)
-  (dW2, db2, _) = backPropagation(n, W, b, X, Y)
-
-  theta1 = reshapeInTheta(dW1, db1)
-  theta2 = reshapeInTheta(dW2, db2)
-
-  diff = np.linalg.norm(theta1 - theta2) / (np.linalg.norm(theta1) + np.linalg.norm(theta2))
-
-  if diff > epsilon:
-    print("\ndiff:")
-    print(diff)
-
-  return diff < epsilon
-
-'''
-Receives NN weights and bias
-Reshapes them into a vector
-'''
-def reshapeInTheta(W, b):
-  assert isinstance(W, np.ndarray)
-  # assert len(W.shape) == 3
-  assert isinstance(b, np.ndarray)
-  # assert len(b.shape) == 3
-
-  L = W.shape[0]
-  theta = np.array([])
-
-  for i in range(L):
-    theta = np.append(theta, W[i])
-    theta = np.append(theta, b[i])
-
-  theta = theta.reshape(theta.size, 1)
-
-  return theta
-
-
-
-'''
-Receives theta and W
-Returns array of W and b
-'''
-def reshapeFromTheta(theta, WCopy):
-  assert isinstance(theta, np.ndarray)
-  assert theta.shape[1] == 1
-
-  assert isinstance(WCopy, np.ndarray)
-  # assert len(WCopy.shape) == 3  
-
-  W = []
-  b = []
-  endIndex = 0
-
-  for i in range(len(WCopy)):
-    wSize = WCopy[i].size
-    startIndex = endIndex
-    endIndex = startIndex + wSize
-    W.append(theta[startIndex:endIndex])
-    W[i] = W[i].reshape(WCopy[i].shape)
-
-    bSize = WCopy[i].shape[0]
-    startIndex = endIndex
-    endIndex = startIndex + bSize
-    b.append(theta[startIndex:endIndex])
-
-  W = np.array(W)
-  b = np.array(b)
-
-  return (W, b)
-
-
-
-'''
-Receives weights, their derivatives, and learning rate.
-Returns updated weights
-'''
-def updateWeights(W, dW, b, db, alpha):
-  assert isinstance(W, np.ndarray)
-  assert isinstance(dW, np.ndarray)
-  assert W.shape == dW.shape
-
-  assert isinstance(b, np.ndarray)
-  assert isinstance(db, np.ndarray)
-  assert b.shape == db.shape
-
-  for i in range(len(W)):
-    W[i] = W[i] - alpha * dW[i]
-    b[i] = b[i] - alpha * db[i]
-
-
-
-'''
 Receives model structure:
 an array of NN layers with number of nodes in each layer
 Generates and returns random initial weights and bias
 '''
-def initializeWeights(n):
+def initialize_weights(n):
   assert isinstance(n, list)
 
   L = len(n)
@@ -258,102 +193,22 @@ def initializeWeights(n):
 
 
 '''
-Receives weights, bias and initial position
-Returns best movement
-'''
-def predict(W, b, x):
-  assert isinstance(W, np.ndarray)
-  assert isinstance(b, np.ndarray)
-  assert isinstance(x, np.ndarray)
-  assert x.shape == (9, 1)
-
-  (aL, _) = forwardPropagation(W, b, x)
-  maxIndex = aL.argmax()
-
-  if x[maxIndex] == 0:
-    y = np.zeros((9, 1))
-    y[maxIndex] = 1
-
-    return y
-
-  aL[maxIndex] = 0
-
-  maxIndex = aL.argmax()
-
-  if x[maxIndex] == 0:
-    y = np.zeros((9, 1))
-    y[maxIndex] = 1
-
-    return y
-
-  aL[maxIndex] = 0
-
-  maxIndex = aL.argmax()
-
-  y = np.zeros((9, 1))
-  y[maxIndex] = 1
-
-  return y
-
-
-
-'''
-Receives matrix of values.
-Returns sigmoid activations for those values.
-'''
-def sigmoid(Z):
-  assert isinstance(Z, np.ndarray)
-  assert len(Z.shape) == 2
-
-  return 1 / (1 + np.exp(-Z))
-
-
-
-'''
-Receives layers structure list (e.g. [9, 9])
-weights, bias, and file name. Saves all data in a file. 
-'''
-def saveModel(layers, W, b, fname = 'test.model'):
-  assert isinstance(fname, str)
-  assert isinstance(layers, list)
-  assert isinstance(W, np.ndarray)
-  assert isinstance(b, np.ndarray)
-
-  flatLayers = [len(layers)]
-  flatLayers.extend(layers)
-  flatLayers = np.array(flatLayers)
-  flatLayers = flatLayers.reshape(flatLayers.size, 1)
-
-  for i in range(len(layers) - 1):
-    flatWi = W[i].reshape(W[i].size, 1)
-
-    flatW = flatWi if i == 0 else np.concatenate((flatW, flatWi), axis = 0)
-    flatb = b[i] if i == 0 else np.concatenate((flatb, b[i]), axis = 0)
-
-  result = np.concatenate((flatLayers, flatW, flatb))
-  # print(result)
-
-  np.savetxt(fname, result, delimiter=',')
-
-
-
-'''
 Receives file name.
 Reads file content and returns dictionary
 {
-  'n': <layers>,
-  'W': <weights>,
-  'b': <bias>,
+  'n': <layers>, # list
+  'W': <weights>, # numpy array
+  'b': <bias>, # numpy array
 }
 '''
-def loadModel(fname):
+def load(fname):
   raw = np.loadtxt(fname, delimiter=',')
   raw = raw.reshape(raw.size, 1)
 
   L = (raw[0][0]).astype(int)
   n = raw[1:L + 1].astype(int)
   n = n.reshape(1, L)
-  n = n[0]
+  n = n[0].tolist()
 
   start = L + 1
   W = []
@@ -384,3 +239,194 @@ def loadModel(fname):
     'W': W,
     'b': b,
   }
+
+
+
+'''
+Receives layers structure list (e.g. [9, 9])
+weights, bias, and file name. Saves all data in a file. 
+'''
+def save(n, W, b, fname):
+  assert isinstance(fname, str)
+  assert isinstance(n, list)
+  assert isinstance(W, np.ndarray)
+  assert isinstance(b, np.ndarray)
+
+  flatLayers = [len(n)]
+  flatLayers.extend(n)
+  flatLayers = np.array(flatLayers)
+  flatLayers = flatLayers.reshape(flatLayers.size, 1)
+
+  for i in range(len(n) - 1):
+    flatWi = W[i].reshape(W[i].size, 1)
+
+    flatW = flatWi if i == 0 else np.concatenate((flatW, flatWi), axis = 0)
+    flatb = b[i] if i == 0 else np.concatenate((flatb, b[i]), axis = 0)
+
+  result = np.concatenate((flatLayers, flatW, flatb))
+  # print(result)
+
+  np.savetxt(fname, result, delimiter=',')
+
+
+
+'''
+Receives file names of two models.
+Plays two games and Shows the results.
+'''
+def play_the_game(model1_fname, model2_fname):
+  _play_the_game(model1_fname, model2_fname)
+  _play_the_game(model2_fname, model1_fname)
+
+
+
+'''
+Receives weights, bias and initial position
+Returns best movement
+'''
+def predict(W, b, x):
+  assert isinstance(W, np.ndarray)
+  assert isinstance(b, np.ndarray)
+  assert isinstance(x, np.ndarray)
+
+  assert training.isProperTrainingXData(x)
+
+  debug = False
+
+  if debug:
+    received_position = position.positionFromVector(x)
+    print("received position:")
+    position.printPosition(received_position)
+
+  (aL, _) = forward_propagation(W, b, x)
+
+  if debug:
+    print("received FP results:")
+    print(aL)
+
+  y = np.zeros((9, 1))
+
+  maxIndex = aL.argmax()
+
+  # if aL[maxIndex] > 0.5:
+  y[maxIndex] = 1
+
+  if debug:
+    y_position = position.positionFromVector(y)
+    print("prediction:")
+    position.printPosition(y_position)
+
+    raw_input("...")
+
+  return y
+
+
+
+'''
+Receives matrix of values.
+Returns sigmoid activations for those values.
+'''
+def sigmoid(Z):
+  assert isinstance(Z, np.ndarray)
+  assert len(Z.shape) == 2
+
+  return 1 / (1 + np.exp(-Z))
+
+
+
+'''
+Receives weights, their derivatives, and learning rate.
+Returns updated weights
+'''
+def update_weights(W, dW, b, db, alpha):
+  assert isinstance(W, np.ndarray)
+  assert isinstance(dW, np.ndarray)
+  assert W.shape == dW.shape
+
+  assert isinstance(b, np.ndarray)
+  assert isinstance(db, np.ndarray)
+  assert b.shape == db.shape
+
+  W = W - alpha * dW
+  b = b - alpha * db
+
+
+
+'''
+Receives NN weights and bias
+Reshapes them into a vector
+'''
+def _reshape_in_theta(W, b):
+  assert isinstance(W, np.ndarray)
+  # assert len(W.shape) == 3
+  assert isinstance(b, np.ndarray)
+  # assert len(b.shape) == 3
+
+  L = W.shape[0]
+  theta = np.array([])
+
+  for i in range(L):
+    theta = np.append(theta, W[i])
+    theta = np.append(theta, b[i])
+
+  theta = theta.reshape(theta.size, 1)
+
+  return theta
+
+
+
+'''
+Receives theta and W
+Returns array of W and b
+'''
+def _reshape_from_theta(theta, WCopy):
+  assert isinstance(theta, np.ndarray)
+  assert theta.shape[1] == 1
+
+  assert isinstance(WCopy, np.ndarray)
+  # assert len(WCopy.shape) == 3  
+
+  W = []
+  b = []
+  endIndex = 0
+
+  for i in range(len(WCopy)):
+    wSize = WCopy[i].size
+    startIndex = endIndex
+    endIndex = startIndex + wSize
+    W.append(theta[startIndex:endIndex])
+    W[i] = W[i].reshape(WCopy[i].shape)
+
+    bSize = WCopy[i].shape[0]
+    startIndex = endIndex
+    endIndex = startIndex + bSize
+    b.append(theta[startIndex:endIndex])
+
+  W = np.array(W)
+  b = np.array(b)
+
+  return (W, b)
+
+
+
+def _play_the_game(model1_fname, model2_fname):
+  model1 = load(model1_fname)
+  model2 = load(model2_fname)
+
+  game_position = position.make_zero_position()
+
+  print('%s starts' % (model1_fname))
+
+  while True:
+    movement = predict(model1['W'], model1['b'], position.reshapePositionInVector(game_position))
+    game_position = position.change_position_with_movement_vector(game_position, movement)
+
+    if not position.isFinalPosition(game_position):
+      inverted_position = position.inversePosition(game_position)
+      movement = predict(model2['W'], model2['b'], position.reshapePositionInVector(inverted_position))
+      inverted_position = position.change_position_with_movement_vector(inverted_position, movement)
+      game_position = position.inversePosition(inverted_position)
+
+    if position.isFinalPosition(game_position):
+      position.printPosition(game_position)
+      break
