@@ -300,6 +300,15 @@ Receives weights, bias and initial position
 Returns best movement
 '''
 def predict(W, b, x):
+  (y, _) = predict2(W, b, x)
+
+  return y
+
+'''
+Receives weights, bias and initial position
+Returns best movement and highest aL
+'''
+def predict2(W, b, x):
   assert isinstance(W, np.ndarray)
   assert isinstance(b, np.ndarray)
   assert isinstance(x, np.ndarray)
@@ -333,7 +342,7 @@ def predict(W, b, x):
 
     raw_input("...")
 
-  return y
+  return (y, aL[maxIndex])
 
 
 
