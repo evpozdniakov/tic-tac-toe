@@ -70,12 +70,12 @@ def train_model_scenario_2(n, model_fname, opponet_model_fname, alpha=0.1, itera
     W = W0
     b = b0
   else:
-    make_movement_fn = lambda x: model.predict(W0, b0, x)
+    make_movement_fn = lambda x: model.predict2(W0, b0, x)
     (W, b) = model.initialize_weights(n)
 
   for i in range(0, iterations):
     if model_fname == opponet_model_fname:
-      make_movement_fn = lambda x: model.predict(W, b, x)
+      make_movement_fn = lambda x: model.predict2(W, b, x)
 
     ex = training.make_training_examples(make_movement_fn)
 
@@ -181,7 +181,7 @@ def train_model_scenario_3(n, model_fname, training_examples_fname, m=0, alpha=0
 Trains model continously with generated training examples
 Testing with training.test_model
 '''
-def train_model_scenario_4(model_fname, opponet_model_fname, alpha0=0.1, iterations=50000, beta=0.9):
+def train_model_scenario_4(model_fname, alpha0=0.1, iterations=50000, beta=0.9):
   debug = False
 
   model_instance = model.load(model_fname)
@@ -193,19 +193,12 @@ def train_model_scenario_4(model_fname, opponet_model_fname, alpha0=0.1, iterati
   vdW = np.zeros(W.shape)
   vdb = np.zeros(b.shape)
 
-  if model_fname == opponet_model_fname:
-    make_movement_fn = None
-  else:
-    omi = model.load(model_fname)
-    make_movement_fn = lambda x: model.predict(omi['W'], omi['b'], x)
-
   decay_rate = 4.0 / iterations
 
   for i in range(0, iterations):
     # debug = True if i % 500 == 0 else False
 
-    if make_movement_fn == None:
-      make_movement_fn = lambda x: model.predict(W, b, x)
+    make_movement_fn = lambda x: model.predict2(W, b, x)
 
     ex = training.make_training_examples(make_movement_fn)
 
@@ -510,8 +503,12 @@ def test_position(model_fname):
 # training.make_ideal_training_examples()
 # model.create([9, 18, 18, 18, 18, 9], '9x18x18x18x18x9.model')
 # train_model_scenario_3(n = [9, 27, 27, 27, 27, 9], model_fname='9x27x27x27x27x9.model', training_examples_fname='m_training_examples_3000.csv', alpha=3, iterations=1000)
-# train_model_scenario_4(model_fname='9x18x18x18x18x9.model', opponet_model_fname='9x18x18x18x18x9.model', iterations=300000, alpha0=1)
+# train_model_scenario_4(model_fname='9x18x18x18x18x9.model', iterations=300000, alpha0=1)
 # test_position('9x18x18x18x18x9.model')
 # training.test_model(model_fname='9x81x81x81x9.model')
 
-model.play_two_games('9x18x18x18x18x9.model', '9x36x36x36x36x9.model')
+# # # model.play_two_games('9x18x18x18x18x9.model', '9x81x81x81x9.model')
+# model.play_two_games('9x18x18x18x18x9.model', '9x45x45x45x9.model')
+# model.play_two_games('9x27x27x27x9.model', '9x81x81x81x9.model')
+# model.play_two_games('9x81x81x81x81x9.model', '9x81x81x81x9.model')
+training.generate_and_save_m_training_examples(100, model_fname='9x81x81x81x9.model')

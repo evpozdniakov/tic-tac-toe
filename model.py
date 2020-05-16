@@ -306,7 +306,7 @@ def predict(W, b, x):
 
 '''
 Receives weights, bias and initial position
-Returns best movement and highest aL
+Returns best movement and highest al
 '''
 def predict2(W, b, x):
   assert isinstance(W, np.ndarray)

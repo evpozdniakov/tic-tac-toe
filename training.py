@@ -12,7 +12,7 @@ def generate_and_save_m_training_examples(m, make_movement_fn=None, model_fname=
     modelInstance = model.load(model_fname)
     W = modelInstance['W']
     b = modelInstance['b']
-    make_movement_fn = lambda x: model.predict(W, b, x)
+    make_movement_fn = lambda x: model.predict2(W, b, x)
 
   trainingExamples = make_training_examples(make_movement_fn)
 
@@ -32,11 +32,17 @@ def generate_and_save_m_training_examples(m, make_movement_fn=None, model_fname=
 
   X = X[:,0:m]
   Y = Y[:,0:m]
-  
-  save_training_examples({
-    'X': X,
-    'Y': Y,
-  }, fileName=traing_fname)
+
+  if traing_fname == None:
+    save_training_examples({
+      'X': X,
+      'Y': Y,
+    })
+  else:  
+    save_training_examples({
+      'X': X,
+      'Y': Y,
+    }, file_name=traing_fname)
 
 
 
@@ -45,13 +51,16 @@ Receives training data x, or y, or both
 Returns true if all passed training data are properly formatted.
 '''
 def is_proper_training_data(x = None, y = None):
-  if x == None and y == None:
+  x_not_provided = not isinstance(x, np.ndarray)
+  y_not_provided = not isinstance(y, np.ndarray)
+
+  if x_not_provided and y_not_provided:
     return True
 
-  if x != None and y == None:
+  if y_not_provided:
     return is_proper_training_X_data(x)
   
-  if x == None and y != None:
+  if x_not_provided:
     return is_proper_training_Y_data(y)
   
   return is_proper_training_X_data(x) and is_proper_training_Y_data(y)
@@ -92,16 +101,10 @@ Predicts the movement coords with help of make_movement_fn
 (places either 1 for main player or -1 for the opponent)
 Returns result position (which is either a real or a final position) and coords of the movement
 '''
-def make_movement(game_position, make_movement_fn):
+def make_movement(game_position, make_movement_fn, use_random_movement = False):
   assert isinstance(game_position, np.ndarray)
   assert game_position.shape == (3, 3)
   assert position.is_real_position(game_position)
-
-  use_random_movement = np.random.rand() < 0.05
-  # use_random_movement = True
-
-  if make_movement_fn == None or use_random_movement:
-    return position.make_random_movement(game_position)
 
   if game_position.sum() == 0:
     # main player makes movement
@@ -111,11 +114,14 @@ def make_movement(game_position, make_movement_fn):
     inverted_position = position.invert_position(game_position)
     position_vector = position.transform_position_into_vector(inverted_position)
 
-  movement_vector = make_movement_fn(position_vector)
-  movement_position = position.transform_vector_into_position(movement_vector)
+  (movement_vector, highest_al) = make_movement_fn(position_vector)
 
-  if (movement_position.sum() != 1):
-    return position.make_random_movement(game_position)
+  if use_random_movement:
+    random_movement = position.make_random_movement(game_position)
+    random_movement['highest_al'] = highest_al
+    return random_movement
+
+  movement_position = position.transform_vector_into_position(movement_vector)
 
   for i in range(3):
     for j in range(3):
@@ -126,18 +132,20 @@ def make_movement(game_position, make_movement_fn):
   i2 = coords[0]
   j2 = coords[1]
 
-  # choose random empty cell if make_movement_fn not specified
-  # or if it failed to choose an empty cell
+  # choose random empty cell if make_movement_fn failed to choose an empty cell
   if game_position[i2][j2] != 0:
-    return position.make_random_movement(game_position)
+    random_movement = position.make_random_movement(game_position)
+    random_movement['highest_al'] = highest_al
+    return random_movement
 
-  resultPosition = position.clone(game_position)
+  result_position = position.clone(game_position)
 
-  resultPosition[i2][j2] = 1 if game_position.sum() == 0 else -1
+  result_position[i2][j2] = 1 if game_position.sum() == 0 else -1
 
   movement = {
     'coords': coords,
-    'resultPosition': resultPosition,
+    'result_position': result_position,
+    'highest_al': highest_al,
   }
 
   return movement
@@ -149,171 +157,186 @@ Returns a few training examples:
   X: matrix 9 x m
   Y: matrix 9 x m
 '''
-def make_training_examples(make_movement_fn=None):
-  start_position = np.zeros((3, 3)).astype(np.int8)
-  use_zero_position = np.random.rand() > 0.5
-  # use_zero_position = True
+def make_training_examples(make_movement_fn):
+  zero_position = position.make_zero_position()
+  main_player_starts = np.random.rand() > 0.5
 
-  if use_zero_position:
-    # print("WE ARE USING ZERO POZITION")
-    trainingExampes = make_training_examples_rec(start_position, make_movement_fn)
+  if main_player_starts:
+    training_examples = make_training_examples_rec(zero_position, make_movement_fn)
   else:
-    # print("WE ARE USING NON-ZERO POZITION")
-    emptyCellCoords = []
-
-    for i in range(3):
-      for j in range(3):
-        emptyCellCoords.append((i, j))
-
-    randomIndex = np.floor(np.random.rand() * 9).astype(int)
-    coords = emptyCellCoords[randomIndex]
-
-    i2 = coords[0]
-    j2 = coords[1]
-
-    start_position[i2][j2] = 1
-
-    trainingExampes = make_training_examples_rec(start_position, make_movement_fn)
+    opponent_movement = make_movement(zero_position, make_movement_fn)
+    non_zero_position = opponent_movement['result_position']
+    training_examples = make_training_examples_rec(non_zero_position, make_movement_fn)
 
   return {
-    'X': trainingExampes['X'],
-    'Y': trainingExampes['Y'],
+    'X': training_examples['X'],
+    'Y': training_examples['Y'],
   }
 
 
 
 '''
-Receives initial position, makes random movement.
-If the movement does not give final position (win, loss, or draw)
-then calls itself recursively.
-
-Returns a dictionary with
+Receives initial position (real position).
+Makes one or two movements: first for the main player,
+and (if it is not final position) the second for the opponent.
+If the result position is not the final position, then calls itself recursively.
+Returns training examples based on main player movements, a dictionary:
   X: matrix 9 x m
   Y: matrix 9 x m; each column is a movement matrix reshaped in vector
-    with all zeros except movement coords, which is
-    0.05 if movement resulted a loss,
-    0.5 if movement resulted a draw,
-    1 if it resulted a win.
-  finalPosition: final game position
+    with 0.001 for taken cells
+    1.0 for a movement leading to a win
+    0.66 for a movement leading to a draw
+    0.33 for a movement leading to a loss
 '''
-def make_training_examples_rec(initialPosition, make_movement_fn):
-  assert isinstance(initialPosition, np.ndarray)
-  assert initialPosition.shape == (3, 3)
-  assert position.is_real_position(initialPosition)
+def make_training_examples_rec(initial_position, make_movement_fn):
+  assert isinstance(initial_position, np.ndarray)
+  assert initial_position.shape == (3, 3)
+  assert position.is_real_position(initial_position)
 
   debug = False
 
-  some_movement = make_movement(initialPosition, make_movement_fn)
+  chance_of_random_main_player_movement = np.random.rand() < 0.05
 
-  result_position = some_movement['resultPosition']
+  # main player movement could be random
+  main_player_movement = make_movement(initial_position, make_movement_fn, use_random_movement=chance_of_random_main_player_movement)
 
-  if position.is_final_position(result_position):
-    (x, y) = make_single_training_example(initialPosition, some_movement, result_position)
+  position_after = main_player_movement['result_position']
+
+  if position.is_final_position(position_after):
+    (x, y) = make_single_training_example_for_main_player(initial_position, main_player_movement, position_after)
 
     return {
       'X': x,
       'Y': y,
-      'finalPosition': result_position,
+      'final_position': position_after,
     }
 
-  opponent_movement = make_training_examples_rec(result_position, make_movement_fn)
-  result_position = opponent_movement['finalPosition']
-  (x, y) = make_single_training_example(initialPosition, some_movement, result_position)
+  # opponent movement could be random
+  chance_of_random_opponent_movement = np.random.rand() < 0.01
+
+  opponent_movement = make_movement(position_after, make_movement_fn, use_random_movement=chance_of_random_opponent_movement)
+
+  position_after = opponent_movement['result_position']
+
+  if position.is_final_position(position_after):
+    (x, y) = make_single_training_example_for_main_player(initial_position, main_player_movement, position_after)
+
+    return {
+      'X': x,
+      'Y': y,
+      'final_position': position_after,
+    }
 
   if debug:
-    print("initialPosition")
-    position.print_position(initialPosition)
-    print("some_movement")
-    print(some_movement)
-    print("result_position")
-    position.print_position(result_position)
+    print("initial_position")
+    position.print_position(initial_position)
+    print("main_player_movement")
+    print(main_player_movement)
+    print("opponent_movement")
+    print(opponent_movement)
+    print("opponent_movement_result_position")
+    position.print_position(position_after)
 
-  X = np.append(opponent_movement['X'], x, axis = 1)
-  Y = np.append(opponent_movement['Y'], y, axis = 1)
+  the_dict = make_training_examples_rec(position_after, make_movement_fn)
+  X = the_dict['X']
+  Y = the_dict['Y']
+  final_position = the_dict['final_position']
+
+  assert position.is_final_position(final_position)
+
+  (x, y) = make_single_training_example_for_main_player(initial_position, main_player_movement, final_position)
+
+  X = np.append(X, x, axis = 1)
+  Y = np.append(Y, y, axis = 1)
 
   if debug:
     print(X)
     print(Y)
 
-  assert position.is_final_position(result_position)
 
   return {
     'X': X,
     'Y': Y,
-    'finalPosition': result_position,
+    'final_position': final_position,
   }
 
 
 
 '''
-Receives initial position (a real position), applied movement,
-and the final position (game result).
-Returns single training example (x and y)
+Receives the following:
+- position before movement (a real position),
+- applied movement, 
+- the game result position (a final position).
+The movement could be the main player (who put an X)
+or for the opponent (who put an O)
+Returns a single training example for the movement (x and y)
 '''
-def make_single_training_example(initialPosition, movement, finalPosition):
-  assert position.is_real_position(initialPosition)
-
+def make_single_training_example_for_main_player(position_before, movement, final_position):
+  assert position.is_real_position(position_before)
   assert isinstance(movement['coords'], tuple)
   assert len(movement['coords']) == 2
-
-  assert position.is_final_position(finalPosition)
+  assert position.is_final_position(final_position)
 
   debug = False
 
-  if debug:
-    print("initialPosition")
-    print(initialPosition)
-    print("movement")
-    print(movement)
-    print("finalPosition")
-    print(finalPosition)
+  (i, j) = movement['coords']
+  # Main player is not necessarily the one who starts the game!
+  main_player_started_the_game = final_position[i][j] == 1
 
-  initialPositionVector = position.transform_position_into_vector(initialPosition)
-  inverseInitialPosition = position.invert_position(initialPosition)
-  inverseInitialPositionVector = position.transform_position_into_vector(inverseInitialPosition)
-  randomMovementCoords = movement['coords']
-  (rowIndex, colIndex) = randomMovementCoords
-
-  if debug:
-    print("randomMovementCoords")
-    print(randomMovementCoords)
-    print("rowIndex")
-    print(rowIndex)
-    print("colIndex")
-    print(colIndex)
-
-  randomMovementPutX = finalPosition[rowIndex][colIndex] == 1
-  inverseFinalPosition = position.invert_position(finalPosition)
-
-  if position.is_win_position(finalPosition):
-    if randomMovementPutX:
-      x = initialPositionVector
-      y = movement_matrix_in_vector(initialPosition, randomMovementCoords, 'win', finalPosition)
-    else:
-      x = inverseInitialPositionVector
-      y = movement_matrix_in_vector(inverseInitialPosition, randomMovementCoords, 'loss', inverseFinalPosition)
-  elif position.is_loss_position(finalPosition):
-    if randomMovementPutX:
-      x = initialPositionVector
-      y = movement_matrix_in_vector(initialPosition, randomMovementCoords, 'loss', finalPosition)
-    else:
-      x = inverseInitialPositionVector
-      y = movement_matrix_in_vector(inverseInitialPosition, randomMovementCoords, 'win', inverseFinalPosition)
+  if main_player_started_the_game:
+    x = position.transform_position_into_vector(position_before)
   else:
-    if randomMovementPutX:
-      x = initialPositionVector
-      y = movement_matrix_in_vector(initialPosition, randomMovementCoords, 'draw', finalPosition)
+    position_before_inverted = position.invert_position(position_before)
+    x = position.transform_position_into_vector(position_before_inverted)
+  
+  if debug:
+    print('position_before')
+    position.print_position(position_before)
+    print('x')
+    print(x)
+
+  result_position = movement['result_position']
+  zeros_in_result_position = (result_position == 0).astype(np.int8).sum()
+  zeros_in_final_position = (final_position == 0).astype(np.int8).sum()
+  is_last_game_movement = zeros_in_result_position == zeros_in_final_position
+  is_prelast_game_movement = zeros_in_result_position - zeros_in_final_position == 1
+
+  if is_last_game_movement:
+    if position.is_win_position(final_position):
+      # player X plays and wins
+      value = 1
+    elif position.is_loss_position(final_position):
+      # player O plays and wins
+      value = 1
+    elif position.is_draw_position(final_position):
+      # player X plays and draws
+      value = 0.5
     else:
-      x = inverseInitialPositionVector
-      y = movement_matrix_in_vector(inverseInitialPosition, randomMovementCoords, 'draw', inverseFinalPosition)
+      # must never happen
+      assert False
+  elif is_prelast_game_movement:
+    if position.is_win_position(final_position):
+      # player X plays then O plays and wins
+      value = 0.1
+    elif position.is_loss_position(final_position):
+      # player O plays then X plays and wins
+      value = 0.1
+    elif position.is_draw_position(final_position):
+      # player O plays then X plays and draws
+      value = 0.5
+    else:
+      # must never happen
+      assert False
+  else:
+    value = movement['highest_al']
+
+  y_as_position = (position_before != 0).astype(np.int8) * 0.001
+  y_as_position[i][j] = value
+  y = position.transform_position_into_vector(y_as_position)
 
   if debug:
-    # if not isProperTrainingData(x, y):
-    print("x")
-    print(x)
-    print("y")
+    print('y')
     print(y)
-
     raw_input("...")
 
   assert is_proper_training_data(x, y)
@@ -333,25 +356,25 @@ Makes result matrix where we put
   0 for all the other not taken places
 Returns a vector 9 x 1.
 '''
-def movement_matrix_in_vector(initialPosition, movementCoords, result, finalPosition):
-  assert isinstance(initialPosition, np.ndarray)
-  assert initialPosition.shape == (3, 3)
+def movement_matrix_in_vector(initial_position, movement_coords, result, final_position):
+  assert isinstance(initial_position, np.ndarray)
+  assert initial_position.shape == (3, 3)
 
-  assert isinstance(movementCoords, tuple)
-  assert len(movementCoords) == 2
+  assert isinstance(movement_coords, tuple)
+  assert len(movement_coords) == 2
 
   assert isinstance(result, str)
 
-  assert isinstance(finalPosition, np.ndarray)
-  assert finalPosition.shape == (3, 3)
+  assert isinstance(final_position, np.ndarray)
+  assert final_position.shape == (3, 3)
 
   debug = False
 
   movementMatrix = np.zeros((3, 3))
-  [mi, mj] = movementCoords
+  [mi, mj] = movement_coords
 
-  zeros_in_final_position = (finalPosition == 0).astype(np.int8).sum()
-  zeros_in_initial_position = (initialPosition == 0).astype(np.int8).sum()
+  zeros_in_final_position = (final_position == 0).astype(np.int8).sum()
+  zeros_in_initial_position = (initial_position == 0).astype(np.int8).sum()
   power = zeros_in_initial_position - zeros_in_final_position - 1
   reward = 0.5 / (2 ** power)
 
@@ -364,7 +387,7 @@ def movement_matrix_in_vector(initialPosition, movementCoords, result, finalPosi
           movementMatrix[i][j] = 0.5 - reward + 0.001
         else:
           movementMatrix[i][j] = 0.5 + 0.5 * reward
-      elif initialPosition[i][j] == 0:
+      elif initial_position[i][j] == 0:
         movementMatrix[i][j] = 0
       else:
         movementMatrix[i][j] = 0.001
@@ -373,9 +396,9 @@ def movement_matrix_in_vector(initialPosition, movementCoords, result, finalPosi
     print("\nresult:")
     print(result)
     print("initial position:")
-    position.print_position(initialPosition)
+    position.print_position(initial_position)
     print("final position:")
-    position.print_position(finalPosition)
+    position.print_position(final_position)
     print("power:")
     print(power)
     print("reward:")
@@ -431,8 +454,10 @@ Each training example is a dict where
 Reshapes each tr. example in 18 dimensional vector
 transforms result matrix of 18 x m and saves it in file m_training_examples.csv
 '''
-def save_training_examples(trainingExamples, fileName = 'm_training_examples.csv'):
+def save_training_examples(trainingExamples, file_name='m_training_examples.csv'):
+  print("file_name")
+  print(file_name)
   X = trainingExamples['X']
   Y = trainingExamples['Y']
   XY = np.append(X, Y, axis = 0)
-  np.savetxt(fileName, XY.T, fmt='%0.3f', delimiter=',')
+  np.savetxt(file_name, XY.T, fmt='%0.3f', delimiter=',')
