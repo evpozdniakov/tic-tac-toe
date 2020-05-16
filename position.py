@@ -60,7 +60,7 @@ def invert_position(position):
 
 
 '''
-Returns game position and returns True if it is a real not fianlized position
+Returns game position and returns True if it is a real not finalized position
 Real means position where the first movement was X (1)
 so number of X (1) is either equal to number of O (0)
 or one time bigger
@@ -209,15 +209,15 @@ def make_random_movement(position):
   i2 = coords[0]
   j2 = coords[1]
 
-  resultPosition = clone(position)
+  result_position = clone(position)
 
-  resultPosition[i2][j2] = 1 if position.sum() == 0 else -1
+  result_position[i2][j2] = 1 if position.sum() == 0 else -1
 
-  assert is_real_position(resultPosition) or is_final_position(resultPosition)
+  assert is_real_position(result_position) or is_final_position(result_position)
 
   movement = {
     'coords': coords,
-    'resultPosition': resultPosition,
+    'result_position': result_position,
   }
 
   return movement
