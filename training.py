@@ -101,7 +101,7 @@ Predicts the movement coords with help of make_movement_fn
 (places either 1 for main player or -1 for the opponent)
 Returns result position (which is either a real or a final position) and coords of the movement
 '''
-def make_movement(game_position, make_movement_fn, use_random_movement = False):
+def make_movement(game_position, make_movement_fn, do_random_movement=False):
   assert isinstance(game_position, np.ndarray)
   assert game_position.shape == (3, 3)
   assert position.is_real_position(game_position)
@@ -116,7 +116,7 @@ def make_movement(game_position, make_movement_fn, use_random_movement = False):
 
   (movement_vector, highest_al) = make_movement_fn(position_vector)
 
-  if use_random_movement:
+  if do_random_movement:
     random_movement = position.make_random_movement(game_position)
     random_movement['highest_al'] = highest_al
     return random_movement
@@ -188,42 +188,56 @@ Returns training examples based on main player movements, a dictionary:
     0.66 for a movement leading to a draw
     0.33 for a movement leading to a loss
 '''
-def make_training_examples_rec(initial_position, make_movement_fn):
+def make_training_examples_rec(initial_position, make_movement_fn, previous_movement_was_random = False):
   assert isinstance(initial_position, np.ndarray)
   assert initial_position.shape == (3, 3)
   assert position.is_real_position(initial_position)
 
   debug = False
 
-  chance_of_random_main_player_movement = np.random.rand() < 0.05
+  chance_of_random_main_player_movement = np.random.rand()
+  do_random_movement = previous_movement_was_random or chance_of_random_main_player_movement < 0.05
 
   # main player movement could be random
-  main_player_movement = make_movement(initial_position, make_movement_fn, use_random_movement=chance_of_random_main_player_movement)
+  main_player_movement = make_movement(initial_position, make_movement_fn, do_random_movement)
 
   position_after = main_player_movement['result_position']
 
   if position.is_final_position(position_after):
-    (x, y) = make_single_training_example_for_main_player(initial_position, main_player_movement, position_after)
+    (x, y, al) = make_single_training_example_for_main_player(initial_position, main_player_movement, position_after)
+
+    # if debug:
+    #   print(x)
+    #   print(y)
+    #   raw_input('...')
 
     return {
       'X': x,
       'Y': y,
+      'AL': al,
       'final_position': position_after,
     }
 
   # opponent movement could be random
-  chance_of_random_opponent_movement = np.random.rand() < 0.01
+  chance_of_random_opponent_movement = np.random.rand()
+  do_random_opponent_movement = chance_of_random_opponent_movement < 0.01
 
-  opponent_movement = make_movement(position_after, make_movement_fn, use_random_movement=chance_of_random_opponent_movement)
+  opponent_movement = make_movement(position_after, make_movement_fn, do_random_movement=do_random_opponent_movement)
 
   position_after = opponent_movement['result_position']
 
   if position.is_final_position(position_after):
-    (x, y) = make_single_training_example_for_main_player(initial_position, main_player_movement, position_after)
+    (x, y, al) = make_single_training_example_for_main_player(initial_position, main_player_movement, position_after)
+
+    # if debug:
+    #   print(x)
+    #   print(y)
+    #   raw_input('...')
 
     return {
       'X': x,
       'Y': y,
+      'AL': al,
       'final_position': position_after,
     }
 
@@ -237,26 +251,35 @@ def make_training_examples_rec(initial_position, make_movement_fn):
     print("opponent_movement_result_position")
     position.print_position(position_after)
 
-  the_dict = make_training_examples_rec(position_after, make_movement_fn)
+  the_dict = make_training_examples_rec(position_after, make_movement_fn, do_random_movement)
   X = the_dict['X']
   Y = the_dict['Y']
+  AL = the_dict['AL']
   final_position = the_dict['final_position']
 
   assert position.is_final_position(final_position)
 
-  (x, y) = make_single_training_example_for_main_player(initial_position, main_player_movement, final_position)
+  highest_al = AL[len(AL) - 1]
+
+  (x, y, al) = make_single_training_example_for_main_player(initial_position, main_player_movement, final_position, highest_al)
 
   X = np.append(X, x, axis = 1)
   Y = np.append(Y, y, axis = 1)
+  AL = np.append(AL, al)
 
   if debug:
+    print('\nX')
     print(X)
+    print('Y')
     print(Y)
-
+    print('AL')
+    print(AL)
+    raw_input('...')
 
   return {
     'X': X,
     'Y': Y,
+    'AL': AL,
     'final_position': final_position,
   }
 
@@ -271,7 +294,7 @@ The movement could be the main player (who put an X)
 or for the opponent (who put an O)
 Returns a single training example for the movement (x and y)
 '''
-def make_single_training_example_for_main_player(position_before, movement, final_position):
+def make_single_training_example_for_main_player(position_before, movement, final_position, highest_al=0):
   assert position.is_real_position(position_before)
   assert isinstance(movement['coords'], tuple)
   assert len(movement['coords']) == 2
@@ -328,7 +351,7 @@ def make_single_training_example_for_main_player(position_before, movement, fina
       # must never happen
       assert False
   else:
-    value = movement['highest_al']
+    value = highest_al
 
   y_as_position = (position_before != 0).astype(np.int8) * 0.001
   y_as_position[i][j] = value
@@ -337,11 +360,13 @@ def make_single_training_example_for_main_player(position_before, movement, fina
   if debug:
     print('y')
     print(y)
-    raw_input("...")
+    # raw_input("...")
 
   assert is_proper_training_data(x, y)
 
-  return (x, y)
+  al = movement['highest_al']
+
+  return (x, y, al)
 
 
 

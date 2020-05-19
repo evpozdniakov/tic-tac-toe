@@ -181,7 +181,7 @@ def train_model_scenario_3(n, model_fname, training_examples_fname, m=0, alpha=0
 Trains model continously with generated training examples
 Testing with training.test_model
 '''
-def train_model_scenario_4(model_fname, alpha0=0.1, iterations=50000, beta=0.9):
+def train_model_scenario_4(model_fname, alpha0=1, iterations=500000, beta=0.9):
   debug = False
 
   model_instance = model.load(model_fname)
@@ -193,9 +193,12 @@ def train_model_scenario_4(model_fname, alpha0=0.1, iterations=50000, beta=0.9):
   vdW = np.zeros(W.shape)
   vdb = np.zeros(b.shape)
 
-  decay_rate = 4.0 / iterations
+  decay_rate = 9.0 / iterations # it will reduce final alpha 10 times
 
   for i in range(0, iterations):
+    if i % 1000 == 0:
+      print('i: %d' % (i))
+
     # debug = True if i % 500 == 0 else False
 
     make_movement_fn = lambda x: model.predict2(W, b, x)
@@ -204,15 +207,6 @@ def train_model_scenario_4(model_fname, alpha0=0.1, iterations=50000, beta=0.9):
 
     X = ex['X']
     Y = ex['Y']
-
-    # test_case = training.test_case_3()
-    # # print(test_case)
-
-    # x = test_case[3, 0:9].reshape(9, 1)
-    # y = test_case[3, 9:18].reshape(9, 1)
-
-    # X = np.array(x)
-    # Y = np.array(y)
 
     if debug:
       print(X)
@@ -259,7 +253,7 @@ def train_model_scenario_4(model_fname, alpha0=0.1, iterations=50000, beta=0.9):
     alpha = alpha0 / (1.0 + decay_rate * i)
 
     # if debug:
-    if i % 100 == 0:
+    if i % 1000 == 0:
       print("alpha:")
       print(alpha)
 
@@ -267,106 +261,16 @@ def train_model_scenario_4(model_fname, alpha0=0.1, iterations=50000, beta=0.9):
     vdb = beta * vdb + (1 - beta) * db
 
     # model.updateWeights(W, dW, b, db, alpha)
-    if debug:
-      test_result1 = training.test_model(W, b)
 
     # W = W - alpha * vdW
     # b = b - alpha * vdb
     W = W - alpha * dW
     b = b - alpha * db
-
-    if debug:
-      test_result2 = training.test_model(W, b)
-
-      if test_result2 < test_result1:
-        print("\n DROP FROM %02f to %02f" % (test_result1, test_result2))
-        Wprev = W + alpha * vdW
-        bprev = b + alpha * vdb
-
-        test_case_getters = [
-          training.test_case_1,
-          training.test_case_2,
-          training.test_case_3,
-          training.test_case_4,
-          training.test_case_5,
-          training.test_case_6,
-        ]
-
-        for i in range(len(test_case_getters)):
-          test_case = test_case_getters[i]()
-
-          for j in range(len(test_case)):
-            x = test_case[j][0:9].reshape(9, 1)
-            y = test_case[j][9:18].reshape(9, 1)
-
-            if (model.predict(Wprev, bprev, x) == y).all():
-              if not (model.predict(W, b, x) == y).all():
-                print("\nfailed test position:")
-                position.print_position(x.reshape(3, 3))
-
-        if False:
-          for j in range(len(X.T)):
-            x = X.T[j]
-            nextPosition = position.transform_vector_into_position(x)
-
-            position.print_position(nextPosition)
-
-            print(' predicted before')
-
-            x = position.transform_position_into_vector(nextPosition)
-            movement = model.predict(Wprev, bprev, x)
-            position.print_movement(movement)
-
-            print(' predicted after')
-
-            x = position.transform_position_into_vector(nextPosition)
-            movement = model.predict(W, b, x)
-            position.print_movement(movement)
-
-            print(' expected ')
-
-            y = Y.T[j]
-            position.print_movement(y.reshape(9, 1))
-
-            raw_input("Press Enter to continue...")
-
-    # for k in range(len(X.T)):
-    #   x = X[:, k]
-    #   y = Y[:, k].reshape(9, 1)
-    #   aL1 = AL1[:, k].reshape(9, 1)
-    #   aL2 = AL2[:, k].reshape(9, 1)
-
-    #   received_position = position.positionFromVector(x)
-    #   print("received position:")
-    #   position.printPosition(received_position)
-
-    #   print("y:")
-    #   position.printMovement(y)
-
-    #   print("al1/al2 results:")
-    #   print(np.concatenate((aL1, aL2, aL2 - aL1), axis=1))
-
-    #   raw_input("...")
-
-
-    if debug:
-      test_result = training.test_model(W, b)
-      if test_result > 0.65:
-        print("test_result: %02f" % (test_result))
-
-      if test_result == 1:
-        print("------ all tests pass ------")
-        break
-
-      if i % 50 == 0:
-        print("\n" + str(i))
-        print(test_result)
     
-    if i > 0 and i % 100 == 0:
+    if i > 0 and i % 50 == 0:
       model.save(n, W, b, model_fname)
-      print("model saved")
-
-    
+      if debug:
+        print("model saved")
 
   print('------ end -------')
 
@@ -456,12 +360,9 @@ def test_position(model_fname):
 
 
   x = np.array([
-  #  -1,-1, 0,\
-  #   0, 1, 0,\
-  #   0, 0, 1,\
-    0,-1, 0,\
-    0, 1, 0,\
-    0, 0, 0,\
+    -1,-1, 0,
+     0, 1, 0,
+     0, 0, 0,
   ]).reshape(9, 1)
 
   print('\n')
@@ -473,42 +374,105 @@ def test_position(model_fname):
   movement = model.predict(W, b, x)
   position.print_movement(movement)
 
-
-  x = np.array([
-    # 0, 0, 0,\
-    # 0, 0, 0,\
-    # 0, 0, 0,\
-    0, 0, 0,\
-    0,-1, 0,\
-    0, 0, 0,\
-  #   1, 0, 0,\
-  #   0, 1,-1,\
-  #  -1, 1,-1,\
-  #  -1, 0, 0,\
-  #   0,-1, 0,\
-  #   1,-1, 1,\
-  ]).reshape(9, 1)
-
-  print('\n')
-  position.print_position(position.transform_vector_into_position(x))
-
-  (aL, _) = model.forward_propagation(W, b, x)
-  print("aL")
-  print(aL)
-  movement = model.predict(W, b, x)
-  position.print_movement(movement)
 
 
 
 # training.make_ideal_training_examples()
-# model.create([9, 18, 18, 18, 18, 9], '9x18x18x18x18x9.model')
 # train_model_scenario_3(n = [9, 27, 27, 27, 27, 9], model_fname='9x27x27x27x27x9.model', training_examples_fname='m_training_examples_3000.csv', alpha=3, iterations=1000)
-# train_model_scenario_4(model_fname='9x18x18x18x18x9.model', iterations=300000, alpha0=1)
 # test_position('9x18x18x18x18x9.model')
 # training.test_model(model_fname='9x81x81x81x9.model')
 
-# # # model.play_two_games('9x18x18x18x18x9.model', '9x81x81x81x9.model')
-# model.play_two_games('9x18x18x18x18x9.model', '9x45x45x45x9.model')
-# model.play_two_games('9x27x27x27x9.model', '9x81x81x81x9.model')
-# model.play_two_games('9x81x81x81x81x9.model', '9x81x81x81x9.model')
-training.generate_and_save_m_training_examples(100, model_fname='9x81x81x81x9.model')
+# model.play_two_games('9x81x81x9.model', '9x45x45x45x9.model')
+# model.play_two_games('9x18x18x18x18x9.model', '9x81x81x9.model')
+# model.play_two_games('9x81x81x9.model', '9x81x81x81x9.model')
+# model.play_two_games('9x27x27x27x9.model', '9x81x81x9.model')
+# model.play_two_games('9x81x81x9.model', '9x81x81x81x9.model')
+# model.play_two_games('9x81x81x81x81x9.model', '9x81x81x9.model')
+# training.generate_and_save_m_training_examples(100, model_fname='9x81x81x81x9.model')
+# test_model_on_static_examples(model_fname='9x27x27x27x27x9.model', training_examples_fname='m_training_examples.csv')
+# model.create([9, 27, 27, 9], '9x27x27x9.model')
+# train_model_scenario_4(model_fname='9x27x27x9.model', alpha0=0.1)
+test_position('9x27x27x9.model')
+# model.play_two_games('9x27x27x9.model', '9x81x81x9.model')
+
+def spy_on_training_process(model_fname):
+  model_instance = model.load(model_fname)
+
+  n = model_instance['n']
+  W = model_instance['W']
+  b = model_instance['b']
+  
+  vdW = np.zeros(W.shape)
+  vdb = np.zeros(b.shape)
+
+  alpha0 = 0.3
+  beta=0.9
+  iterations = 100000
+  decay_rate = 4.0 / iterations
+
+  pos_trains = 0
+  x_to_investigate = None
+
+  for i in range(0, iterations):
+    make_movement_fn = lambda x: model.predict2(W, b, x)
+
+    ex = make_training_examples(make_movement_fn)
+
+    X = ex['X']
+    Y = ex['Y']
+
+    x = X[:, 0].reshape(9, 1)
+
+    if x_to_investigate == None:
+      x_to_investigate = x
+      position_to_investigate = x_to_investigate.reshape(3, 3)
+
+    if (x == x_to_investigate).all():
+      position.print_position(position_to_investigate)
+      (_, _, aLbefore) = model.predict3(W, b, x_to_investigate)
+
+    (dW, db, _) = model.back_propagation(n, W, b, X, Y)
+
+    alpha = alpha0 / (1.0 + decay_rate * i)
+
+    vdW = beta * vdW + (1 - beta) * dW
+    vdb = beta * vdb + (1 - beta) * db
+
+    W = W - alpha * dW
+    b = b - alpha * db
+
+    if i > 0 and i % 1000 == 0:
+      model.save(n, W, b, model_fname)
+      print('========saved=======')
+
+    if (x == x_to_investigate).all():
+      pos_trains += 1
+      position.print_position(position_to_investigate)
+      (_, _, aLafter) = model.predict3(W, b, x_to_investigate)
+      print('\niteration: %d, position trained times: %d' % (i, pos_trains))
+      y = Y[:, 0].reshape(9, 1)
+      table = np.concatenate((aLbefore, aLafter, y), axis = 1)
+      print(table)
+
+def make_training_examples(make_movement_fn):
+  random = np.random.rand()
+
+  chance_of_custom_case = random < 0.25
+
+  if not chance_of_custom_case:
+    return training.make_training_examples(make_movement_fn)
+
+  non_zero_position = np.array([
+    0, 0, 0,
+    1, 1, 0,
+    0, 0,-1,
+  ]).reshape(3, 3)
+
+  training_examples = training.make_training_examples_rec(non_zero_position, make_movement_fn)
+
+  return {
+    'X': training_examples['X'],
+    'Y': training_examples['Y'],
+  }
+
+# spy_on_training_process('9x81x81x9.model')

@@ -266,18 +266,23 @@ def play_one_game(model1_fname, model2_fname):
 
   print('%s starts' % (model1_fname))
 
+  movements_history = []
+
   while True:
     movement = predict(model1['W'], model1['b'], position.transform_position_into_vector(game_position))
+    movements_history.append(movement)
     game_position = position.change_position_with_movement_vector(game_position, movement)
 
     if not position.is_final_position(game_position):
       inverted_position = position.invert_position(game_position)
       movement = predict(model2['W'], model2['b'], position.transform_position_into_vector(inverted_position))
+      movements_history.append(movement)
       inverted_position = position.change_position_with_movement_vector(inverted_position, movement)
       game_position = position.invert_position(inverted_position)
 
     if position.is_final_position(game_position):
-      position.print_position(game_position)
+      # position.print_position(game_position)
+      position.print_movements_history(movements_history)
       break
 
 
@@ -304,11 +309,24 @@ def predict(W, b, x):
 
   return y
 
+
+
+'''
+Receives weights, bias and initial position
+Returns best movement
+'''
+def predict2(W, b, x):
+  (y, highest_al, _) = predict3(W, b, x)
+
+  return (y, highest_al)
+
+
+
 '''
 Receives weights, bias and initial position
 Returns best movement and highest al
 '''
-def predict2(W, b, x):
+def predict3(W, b, x):
   assert isinstance(W, np.ndarray)
   assert isinstance(b, np.ndarray)
   assert isinstance(x, np.ndarray)
@@ -342,7 +360,7 @@ def predict2(W, b, x):
 
     raw_input("...")
 
-  return (y, aL[maxIndex])
+  return (y, aL[maxIndex], aL)
 
 
 

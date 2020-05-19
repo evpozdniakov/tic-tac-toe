@@ -279,6 +279,30 @@ def print_movement(movement):
 
 
 '''
+Receives array of movement vectors
+Prints them out
+'''
+def print_movements_history(history):
+  xo = [['_', '_', '_'],
+    ['_', '_', '_'],
+    ['_', '_', '_']]
+
+  for k in range(len(history)):
+    movement = history[k]
+    movement_position = transform_vector_into_position(movement)
+    for i in range(3):
+      for j in range(3):
+        if movement_position[i][j] == 1:
+          i2 = i
+          j2 = j
+
+    color = 'blue' if k % 2 == 1 else 'green'
+    xo[i2][j2] = colored(str(k + 1), color)
+
+  for i in range(0, 3):
+    print(xo[i][0] + ' ' + xo[i][1] + ' ' + xo[i][2])
+
+'''
 Returns real random position
 '''
 def randomPosition():
